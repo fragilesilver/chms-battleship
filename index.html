@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHMS Battleship Royale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">Battleship Royale <small>CHMS BSB</small></h1>
+    <div class="who" id="who"></div>
+  </header>
+
+  <main id="app">
+    <!-- Join -->
+    <section id="screen-join" class="screen join">
+      <h2>Report for duty</h2>
+      <p>Enter the game code on the board and your name.</p>
+      <form id="join-form" autocomplete="off">
+        <label>Game code
+          <input id="join-code" maxlength="4" required placeholder="K7QX" autocapitalize="characters" spellcheck="false">
+        </label>
+        <label>Your name
+          <input id="join-name" maxlength="20" required placeholder="First name">
+        </label>
+        <button class="btn primary" type="submit">Join game</button>
+        <p class="msg" id="join-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- Pick a team -->
+    <section id="screen-team" class="screen" hidden>
+      <h2>Choose your crew</h2>
+      <p id="team-note">Pick the team your teacher assigned you.</p>
+      <ul class="team-picker" id="team-picker"></ul>
+    </section>
+
+    <!-- Waiting in lobby -->
+    <section id="screen-wait" class="screen" hidden>
+      <h2 id="wait-title">You're aboard</h2>
+      <p>Waiting for your teacher to open fleet placement.</p>
+      <ul class="teams" id="wait-teams"></ul>
+    </section>
+
+    <!-- Place ships / battle / finished share this layout -->
+    <section id="screen-play" class="screen play" hidden>
+      <div class="chart-wrap"><div id="ocean"></div></div>
+      <aside class="panel" id="panel"></aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/student.js"></script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teacher | CHMS Battleship Royale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="teacher">
+  <header class="topbar">
+    <h1 class="brand">Battleship Royale <small>Teacher dashboard</small></h1>
+    <div class="who" id="who"></div>
+  </header>
+
+  <main id="app">
+    <!-- Create or reopen -->
+    <section id="screen-setup" class="screen setup">
+      <h2>New game</h2>
+      <form id="setup-form" autocomplete="off">
+        <label>Number of teams
+          <select id="team-count">
+            <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+          </select>
+        </label>
+        <fieldset>
+          <legend>Team names</legend>
+          <div id="team-names"></div>
+        </fieldset>
+        <div class="two-col">
+          <label>Starting shots
+            <input id="start-ammo" type="number" min="0" max="5" value="3">
+          </label>
+          <label>Free shot every (seconds)
+            <input id="reload-secs" type="number" min="10" max="300" value="30">
+          </label>
+        </div>
+        <button class="btn primary" type="submit">Create game</button>
+      </form>
+
+      <form id="reopen-form" class="reopen" autocomplete="off">
+        <h3>Reopen a game</h3>
+        <div class="inline">
+          <input id="reopen-code" maxlength="4" placeholder="Code" aria-label="Game code" autocapitalize="characters">
+          <button class="btn" type="submit">Open</button>
+        </div>
+        <p class="msg" id="setup-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- Control room -->
+    <section id="screen-control" class="screen control" hidden>
+      <div class="join-banner">
+        <div>
+          <span class="jb-label">Join at</span>
+          <span class="jb-url" id="join-url"></span>
+        </div>
+        <div>
+          <span class="jb-label">Code</span>
+          <span class="jb-code" id="join-code"></span>
+        </div>
+      </div>
+
+      <ol class="phases" id="phases">
+        <li data-p="lobby">Crews join</li>
+        <li data-p="placement">Fleet placement</li>
+        <li data-p="battle">Battle</li>
+        <li data-p="finished">Finished</li>
+      </ol>
+
+      <div class="control-grid">
+        <div>
+          <div class="controls" id="controls"></div>
+          <p class="warn">This view shows every ship. Don't put it on the projector.</p>
+          <div class="chart-wrap"><div id="ocean"></div></div>
+        </div>
+        <aside class="panel">
+          <h3>Teams</h3>
+          <ul class="teams" id="teams"></ul>
+          <h3>Crew list</h3>
+          <div id="crews" class="crews"></div>
+          <h3>Battle log</h3>
+          <ol class="feed" id="feed"></ol>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/teacher.js"></script>
+</body>
+</html>
