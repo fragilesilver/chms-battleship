@@ -4,15 +4,45 @@
 //  Shown to students as letter + number, e.g. column C, row 7 -> "C7"
 // ============================================================
 
-export const ZONE = 8;           // each team's home waters are 8 x 8
+export const ZONE = 8;           // default home waters: 8 x 8
+export const ZONE_SIZES = [6, 7, 8, 9, 10, 11, 12];
 export const MAX_AMMO = 8;       // a team can bank at most this many shots
 
-export const FLEET = [
-  { id: "carrier",   name: "Carrier",     len: 4 },
-  { id: "destroyer", name: "Destroyer",   len: 3 },
-  { id: "submarine", name: "Submarine",   len: 3 },
-  { id: "patrol",    name: "Patrol boat", len: 2 },
+// Every kind of ship the teacher can add. DEFAULT_FLEET is how many of each.
+export const SHIP_TYPES = [
+  { id: "battleship", name: "Battleship",  len: 5 },
+  { id: "carrier",    name: "Carrier",     len: 4 },
+  { id: "destroyer",  name: "Destroyer",   len: 3 },
+  { id: "submarine",  name: "Submarine",   len: 3 },
+  { id: "patrol",     name: "Patrol boat", len: 2 },
 ];
+export const DEFAULT_FLEET = { battleship: 0, carrier: 1, destroyer: 1, submarine: 1, patrol: 1 };
+export const MAX_PER_TYPE = 4;
+
+// Students pick one of these; it's painted on the ships they place
+export const AVATARS = [
+  "🦈", "🐙", "🐢", "🦀", "🐬", "🐳", "🦑", "🐡", "🐠", "🦭", "🐧", "🦜",
+  "🦊", "🐯", "🐼", "🐸", "🦁", "🐨", "🦄", "🐉", "🤖", "👻", "👽", "🏴‍☠️",
+  "⚓", "⭐", "🔥", "⚡", "🌊", "🚀", "💎", "🍕",
+];
+// only ever show avatars from the list (players write their own avatar)
+export const avatarOf = (a) => (AVATARS.includes(a) ? a : "");
+
+// The ships in this game, e.g. [{id:"destroyer", ...}, {id:"destroyer2", name:"Destroyer 2", ...}]
+export function fleetFor(s) {
+  const counts = (s && s.fleet) || DEFAULT_FLEET;
+  const out = [];
+  for (const t of SHIP_TYPES) {
+    const n = counts[t.id] || 0;
+    for (let i = 1; i <= n; i++) {
+      out.push({ id: i === 1 ? t.id : t.id + i, name: n > 1 ? `${t.name} ${i}` : t.name, len: t.len });
+    }
+  }
+  return out;
+}
+
+// Name of the ship with this id in this game ("destroyer2" -> "Destroyer 2")
+export const shipName = (s, id) => (fleetFor(s).find((f) => f.id === id) || { name: "ship" }).name;
 
 export const TEAM_PRESETS = [
   { name: "Red Raiders",       color: "#d0342c" },
@@ -23,25 +53,33 @@ export const TEAM_PRESETS = [
   { name: "Orange Barracudas", color: "#e0621b" },
 ];
 
-// How the team zones are arranged on the shared ocean
-export function layoutFor(teamCount) {
-  if (teamCount <= 2) return { zc: 2, zr: 1 };
-  if (teamCount === 3) return { zc: 3, zr: 1 };
-  if (teamCount === 4) return { zc: 2, zr: 2 };
-  return { zc: 3, zr: 2 };                     // 5 or 6 teams
+// Geometry functions take the game settings `s` ({ teamCount, zoneSize })
+export const zoneSizeOf = (s) => s.zoneSize || ZONE;
+
+// How the team zones are arranged on the shared ocean.
+// Columns are lettered A to Z, so big zones go 2 across instead of 3.
+export function layoutFor(s) {
+  const n = s.teamCount;
+  const wide = zoneSizeOf(s) * 3 <= 26;
+  if (n <= 2) return { zc: 2, zr: 1 };
+  if (n === 3) return wide ? { zc: 3, zr: 1 } : { zc: 2, zr: 2 };
+  if (n === 4) return { zc: 2, zr: 2 };
+  return wide ? { zc: 3, zr: 2 } : { zc: 2, zr: 3 };   // 5 or 6 teams
 }
 
-export function gridSize(teamCount) {
-  const { zc, zr } = layoutFor(teamCount);
-  return { cols: zc * ZONE, rows: zr * ZONE };
+export function gridSize(s) {
+  const { zc, zr } = layoutFor(s);
+  const z = zoneSizeOf(s);
+  return { cols: zc * z, rows: zr * z };
 }
 
-export function zoneFor(teamIndex, teamCount) {
-  const { zc } = layoutFor(teamCount);
+export function zoneFor(teamIndex, s) {
+  const { zc } = layoutFor(s);
+  const z = zoneSizeOf(s);
   return {
-    r0: Math.floor(teamIndex / zc) * ZONE,
-    c0: (teamIndex % zc) * ZONE,
-    size: ZONE,
+    r0: Math.floor(teamIndex / zc) * z,
+    c0: (teamIndex % zc) * z,
+    size: z,
   };
 }
 
@@ -56,9 +94,9 @@ export function inZone(r, c, z) {
   return r >= z.r0 && r < z.r0 + z.size && c >= z.c0 && c < z.c0 + z.size;
 }
 
-export function zoneOwner(r, c, teamCount) {
-  for (let i = 0; i < teamCount; i++) {
-    if (inZone(r, c, zoneFor(i, teamCount))) return "t" + i;
+export function zoneOwner(r, c, s) {
+  for (let i = 0; i < s.teamCount; i++) {
+    if (inZone(r, c, zoneFor(i, s))) return "t" + i;
   }
   return null;
 }
@@ -84,25 +122,31 @@ export function canPlace(fleetObj, candidate, zone) {
   );
 }
 
-export function randomFleet(zone) {
-  const fleet = {};
-  for (const proto of FLEET) {
-    for (let tries = 0; tries < 500; tries++) {
-      const dir = Math.random() < 0.5 ? "h" : "v";
-      const ship = {
-        ...proto,
-        dir,
-        r: zone.r0 + Math.floor(Math.random() * zone.size),
-        c: zone.c0 + Math.floor(Math.random() * zone.size),
-      };
-      if (canPlace(fleet, ship, zone)) { fleet[ship.id] = ship; break; }
-    }
+// icons: avatars to paint on the ships, shared out in turn
+export function randomFleet(zone, s, icons = []) {
+  const protos = fleetFor(s);
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const fleet = {};
+    protos.forEach((proto, i) => {
+      for (let tries = 0; tries < 500; tries++) {
+        const dir = Math.random() < 0.5 ? "h" : "v";
+        const ship = {
+          ...proto,
+          dir,
+          r: zone.r0 + Math.floor(Math.random() * zone.size),
+          c: zone.c0 + Math.floor(Math.random() * zone.size),
+        };
+        if (icons.length) ship.icon = icons[i % icons.length];
+        if (canPlace(fleet, ship, zone)) { fleet[ship.id] = ship; break; }
+      }
+    });
+    if (fleetComplete(fleet, s)) return fleet;
   }
-  return fleet;
+  return null;   // this fleet doesn't fit in the zone
 }
 
-export const fleetComplete = (fleetObj) =>
-  FLEET.every((p) => fleetObj && fleetObj[p.id]);
+export const fleetComplete = (fleetObj, s) =>
+  fleetFor(s).every((p) => fleetObj && fleetObj[p.id]);
 
 export function findShipAt(fleets, r, c) {
   for (const [teamId, fleetObj] of Object.entries(fleets || {})) {
@@ -133,14 +177,14 @@ export function makeCode() {
 // ---------------- storm ----------------
 // The storm closes in from the edges of the ocean one ring at a time.
 // Ships inside the storm are exposed on everyone's chart.
-export function maxStorm(teamCount) {
-  const { cols, rows } = gridSize(teamCount);
+export function maxStorm(s) {
+  const { cols, rows } = gridSize(s);
   return Math.floor(Math.min(cols, rows) / 2) - 1;
 }
 
-export function inStorm(r, c, teamCount, level) {
+export function inStorm(r, c, s, level) {
   if (!level) return false;
-  const { cols, rows } = gridSize(teamCount);
+  const { cols, rows } = gridSize(s);
   return Math.min(r, c, rows - 1 - r, cols - 1 - c) < level;
 }
 
@@ -151,19 +195,19 @@ export const POWERUPS = {
 };
 export const STREAK_FOR_POWERUP = 3;   // correct answers in a row
 
-function inGrid(r, c, teamCount) {
-  const { cols, rows } = gridSize(teamCount);
+function inGrid(r, c, s) {
+  const { cols, rows } = gridSize(s);
   return r >= 0 && c >= 0 && r < rows && c < cols;
 }
 
-export function airstrikeCells(r, c, teamCount) {
-  return [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].filter(([a, b]) => inGrid(a, b, teamCount));
+export function airstrikeCells(r, c, s) {
+  return [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].filter(([a, b]) => inGrid(a, b, s));
 }
 
-export function sonarCells(r, c, teamCount) {
+export function sonarCells(r, c, s) {
   const out = [];
   for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-    if (inGrid(r + dr, c + dc, teamCount)) out.push([r + dr, c + dc]);
+    if (inGrid(r + dr, c + dc, s)) out.push([r + dr, c + dc]);
   }
   return out;
 }

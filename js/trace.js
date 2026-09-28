@@ -60,7 +60,7 @@ export function makeTorpedo(r, c, cols = 24) {
     const rowLines = TEMPLATES[rowT]("Row", r + 1, "Count", "X");
     const colLines = TEMPLATES[colT]("Col", c + 1, "Index", "Y");
     const lines = [
-      `Letters ← "${"ABCDEFGHIJKLMNOPQRSTUVWX".slice(0, cols)}"`,
+      `Letters ← "${"ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(0, cols)}"`,
       ...rowLines,
       ...colLines,
       `OUTPUT SUBSTRING(Letters, Col, 1), Row`,

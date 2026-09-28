@@ -6,7 +6,10 @@ import {
   startBattle, giveAmmo, endGame, addFeed, setMode, modesOf,
   advanceStorm, setStormNextAt, givePowerups,
 } from "./firebase.js";
-import { TEAM_PRESETS, fleetComplete, maxStorm } from "./game.js";
+import {
+  TEAM_PRESETS, fleetComplete, maxStorm, ZONE, ZONE_SIZES, SHIP_TYPES, DEFAULT_FLEET, MAX_PER_TYPE,
+  gridSize, colLabel, fleetFor, randomFleet, zoneFor, avatarOf,
+} from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 
 const $ = (id) => document.getElementById(id);
@@ -24,13 +27,52 @@ function drawNameInputs() {
     `<label class="name-row" style="--tc:${t.color}"><span class="pennant"></span>
       <input data-i="${i}" value="${t.name}" maxlength="24" aria-label="Team ${i + 1} name"></label>`).join("");
 }
-$("team-count").addEventListener("change", drawNameInputs);
+$("team-count").addEventListener("change", () => { drawNameInputs(); checkMapAndFleet(); });
 drawNameInputs();
+
+// map size + how many of each ship
+$("zone-size").innerHTML = ZONE_SIZES.map((z) =>
+  `<option value="${z}" ${z === ZONE ? "selected" : ""}>${z} × ${z}${z === ZONE ? " (standard)" : ""}</option>`).join("");
+$("fleet-table").innerHTML = SHIP_TYPES.map((t) =>
+  `<label for="fleet-${t.id}">${t.name} <small class="hint">(${t.len} squares)</small></label>
+   <input id="fleet-${t.id}" type="number" min="0" max="${MAX_PER_TYPE}" value="${DEFAULT_FLEET[t.id] || 0}">`).join("") +
+  `<p class="fleet-sum" id="fleet-sum" role="status"></p>`;
+$("zone-size").addEventListener("change", checkMapAndFleet);
+$("fleet-table").addEventListener("input", checkMapAndFleet);
+
+function readFleet() {
+  const fleet = {};
+  for (const t of SHIP_TYPES) {
+    const n = Math.round(+$("fleet-" + t.id).value || 0);
+    fleet[t.id] = Math.max(0, Math.min(MAX_PER_TYPE, n));
+  }
+  return fleet;
+}
+
+// Returns an error message, or "" if this map and fleet work
+function checkMapAndFleet() {
+  const s = { teamCount: +$("team-count").value, zoneSize: +$("zone-size").value, fleet: readFleet() };
+  const { cols, rows } = gridSize(s);
+  $("ocean-size").textContent = `Whole ocean: ${cols} × ${rows} (columns A to ${colLabel(cols - 1)}, rows 1 to ${rows}).`;
+  const ships = fleetFor(s);
+  const squares = ships.reduce((sum, x) => sum + x.len, 0);
+  let err = "";
+  if (!ships.length) err = "Add at least one ship.";
+  else if (squares > s.zoneSize * s.zoneSize * 0.4) err = `${squares} squares of ship is too many for ${s.zoneSize} × ${s.zoneSize} waters. Use fewer ships or bigger waters.`;
+  else if (!randomFleet(zoneFor(0, s), s)) err = "These ships don't fit in the home waters. Use fewer ships or bigger waters.";
+  const sum = $("fleet-sum");
+  sum.textContent = err || `${ships.length} ship${ships.length === 1 ? "" : "s"} per team, ${squares} squares to sink.`;
+  sum.className = "fleet-sum" + (err ? " bad" : "");
+  return err;
+}
+checkMapAndFleet();
 
 const ready = ensureSignedIn().catch(() => { $("setup-msg").textContent = "Couldn't connect to Firebase. Check the internet connection."; });
 
 $("setup-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const err = checkMapAndFleet();
+  if (err) { $("fleet-sum").scrollIntoView({ block: "center" }); return; }
   await ready;
   const code = await createGame({
     teamCount: +$("team-count").value,
@@ -39,6 +81,8 @@ $("setup-form").addEventListener("submit", async (e) => {
     reloadSecs: +$("reload-secs").value,
     torpedoSecs: +$("torpedo-secs").value,
     stormMins: +$("storm-mins").value,
+    zoneSize: +$("zone-size").value,
+    fleet: readFleet(),
     modes: {
       quiz: $("mode-quiz").checked,
       torpedo: $("mode-torpedo").checked,
@@ -82,7 +126,7 @@ function render() {
   });
 
   const teamIdsList = Object.keys(g.teams);
-  const readyCount = teamIdsList.filter((id) => g.teams[id].ready && fleetComplete(g.fleets && g.fleets[id])).length;
+  const readyCount = teamIdsList.filter((id) => g.teams[id].ready && fleetComplete(g.fleets && g.fleets[id], g.settings)).length;
   const players = Object.values(g.players || {});
   const secsLeft = Math.max(0, Math.ceil((state.nextReload - Date.now()) / 1000));
 
@@ -125,10 +169,10 @@ function render() {
 
   $("crews").innerHTML = Object.entries(g.teams).map(([id, t]) => {
     const names = Object.values(g.players || {}).filter((p) => p.team === id)
-      .map((p) => `${escapeHtml(p.name)}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
+      .map((p) => `${avatarOf(p.avatar) ? `<span class="av">${avatarOf(p.avatar)}</span>` : ""}${escapeHtml(p.name)}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
     return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${escapeHtml(t.name)}:</strong> ${names.join(", ") || "none yet"}</p>`;
   }).join("") + (() => {
-    const loose = Object.values(g.players || {}).filter((p) => !p.team).map((p) => escapeHtml(p.name));
+    const loose = Object.values(g.players || {}).filter((p) => !p.team).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
     return loose.length ? `<p><strong>No team:</strong> ${loose.join(", ")}</p>` : "";
   })();
 }
@@ -136,7 +180,7 @@ function render() {
 function fmt(secs) { return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`; }
 
 function stormControls(g) {
-  const lvl = g.storm || 0, max = maxStorm(g.settings.teamCount);
+  const lvl = g.storm || 0, max = maxStorm(g.settings);
   const auto = g.settings.stormMins > 0;
   const next = g.stormNextAt ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;
   return `<div class="btn-row storm-row">
@@ -164,7 +208,7 @@ async function onControl(e) {
   if (act === "supply") { await givePowerups(state.code, g); toast("Supply drop sent."); }
   if (act === "storm") {
     await advanceStorm(state.code, g);
-    const max = maxStorm(g.settings.teamCount);
+    const max = maxStorm(g.settings);
     if (g.stormNextAt) await setStormNextAt(state.code, (g.storm || 0) + 1 >= max ? null : Date.now() + g.settings.stormMins * 60000);
   }
   if (act === "storm-auto") await setStormNextAt(state.code, g.stormNextAt ? null : Date.now() + g.settings.stormMins * 60000);
@@ -182,7 +226,7 @@ async function stormTick(g) {
   stormBusy = true;
   try {
     await advanceStorm(state.code, g);
-    const max = maxStorm(g.settings.teamCount);
+    const max = maxStorm(g.settings);
     await setStormNextAt(state.code, (g.storm || 0) + 1 >= max ? null : Date.now() + g.settings.stormMins * 60000);
   } finally { stormBusy = false; }
 }

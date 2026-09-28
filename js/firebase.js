@@ -10,6 +10,7 @@ import {
   TEAM_PRESETS, MAX_AMMO, teamIds, makeCode, cellKey, cellName, zoneOwner,
   findShipAt, isSunk, shipsAfloat, randomFleet, zoneFor, teamIndex, fleetComplete,
   maxStorm, airstrikeCells, sonarCells, STREAK_FOR_POWERUP, POWERUPS,
+  ZONE, DEFAULT_FLEET, avatarOf, shipName,
 } from "./game.js";
 
 const firebaseConfig = {
@@ -56,7 +57,7 @@ export async function gameExists(code) {
 export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
 export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
 
-export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins }) {
+export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -79,6 +80,7 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, 
       teamCount, startAmmo, reloadSecs, maxAmmo: MAX_AMMO,
       modes: modes || DEFAULT_MODES, torpedoSecs: torpedoSecs || 30,
       stormMins: stormMins || 0,
+      zoneSize: zoneSize || ZONE, fleet: fleet || DEFAULT_FLEET,
     },
     storm: 0,
     teams,
@@ -94,8 +96,8 @@ export async function startBattle(code, game) {
   const updates = {};
   for (const id of Object.keys(game.teams)) {
     const fleet = game.fleets && game.fleets[id];
-    if (!fleetComplete(fleet)) {
-      updates[`fleets/${id}`] = randomFleet(zoneFor(teamIndex(id), game.settings.teamCount));
+    if (!fleetComplete(fleet, game.settings)) {
+      updates[`fleets/${id}`] = randomFleet(zoneFor(teamIndex(id), game.settings), game.settings, crewAvatars(game, id));
     }
     updates[`teams/${id}/ready`] = true;
   }
@@ -105,6 +107,10 @@ export async function startBattle(code, game) {
   await update(gameRef(code), updates);
   await addFeed(code, "Battle stations! Firing is open.", "info");
 }
+
+// The avatars of everyone on a team, for painting on their ships
+export const crewAvatars = (game, teamId) =>
+  Object.values(game.players || {}).filter((p) => p.team === teamId).map((p) => avatarOf(p.avatar)).filter(Boolean);
 
 export async function giveAmmo(code, game, amount) {
   const cap = game.settings.maxAmmo || MAX_AMMO;
@@ -125,11 +131,14 @@ export async function endGame(code) {
 }
 
 // ---------- student actions ----------
-export async function joinGame(code, uid, name) {
+export async function joinGame(code, uid, name, avatar) {
   const playerRef = gameRef(code, `players/${uid}`);
   const existing = (await get(playerRef)).val();
-  await set(playerRef, { name, team: existing ? existing.team || null : null });
+  await set(playerRef, { ...(existing || {}), name, avatar: avatarOf(avatar) || null, team: existing ? existing.team || null : null });
 }
+
+export const setAvatar = (code, uid, avatar) =>
+  update(gameRef(code, `players/${uid}`), { avatar: avatarOf(avatar) || null });
 
 export const chooseTeam = (code, uid, teamId) =>
   update(gameRef(code, `players/${uid}`), { team: teamId });
@@ -143,7 +152,7 @@ export const setReady = (code, teamId, ready) =>
 // opts.free = true for a torpedo (doesn't use a shot)
 export async function fire(code, game, teamId, r, c, uid, opts = {}) {
   const key = cellKey(r, c);
-  const n = game.settings.teamCount;
+  const n = game.settings;
   if (game.phase !== "battle") throw new Error("Firing isn't open right now.");
   if (!game.teams[teamId].alive) throw new Error("Your fleet has been sunk.");
   if (game.shots && game.shots[key]) throw new Error(cellName(r, c) + " has already been hit.");
@@ -178,8 +187,8 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
   const result = { hit: true, cell: cellName(r, c), sunk: false, eliminated: false };
 
   if (isSunk(found.ship, shots)) {
-    result.sunk = found.ship.name;
-    await addFeed(code, `${shooter} sank ${victim}'s ${found.ship.name.toLowerCase()} at ${cellName(r, c)}`, "sink", teamId);
+    result.sunk = shipName(game.settings, found.ship.id);
+    await addFeed(code, `${shooter} sank ${victim}'s ${shipName(game.settings, found.ship.id).toLowerCase()} at ${cellName(r, c)}`, "sink", teamId);
 
     if (shipsAfloat(game.fleets[found.teamId], shots) === 0) {
       result.eliminated = victim;
@@ -244,7 +253,7 @@ async function spendPowerup(code, teamId, type) {
 export async function useSonar(code, game, teamId, r, c) {
   if (game.phase !== "battle") throw new Error("Power-ups only work during the battle.");
   await spendPowerup(code, teamId, "sonar");
-  const n = game.settings.teamCount;
+  const n = game.settings;
   const updates = {};
   let found = 0;
   for (const [a, b] of sonarCells(r, c, n)) {
@@ -260,7 +269,7 @@ export async function useSonar(code, game, teamId, r, c) {
 export async function useAirstrike(code, teamId, r, c, uid) {
   let game = (await get(gameRef(code))).val();
   if (game.phase !== "battle") throw new Error("Power-ups only work during the battle.");
-  const n = game.settings.teamCount;
+  const n = game.settings;
   const cells = airstrikeCells(r, c, n).filter(([a, b]) =>
     zoneOwner(a, b, n) !== teamId && !(game.shots && game.shots[cellKey(a, b)]));
   if (!cells.length) throw new Error("There's nothing left to hit there. Pick another square.");
@@ -288,7 +297,7 @@ export async function givePowerups(code, game) {
 
 // ---------------- storm ----------------
 export async function advanceStorm(code, game) {
-  const max = maxStorm(game.settings.teamCount);
+  const max = maxStorm(game.settings);
   let level = 0;
   const t = await runTransaction(gameRef(code, "storm"), (s) => ((s || 0) >= max ? undefined : (level = (s || 0) + 1)));
   if (!t.committed) return false;

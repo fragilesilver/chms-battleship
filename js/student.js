@@ -4,9 +4,10 @@
 import {
   ensureSignedIn, watchGame, getPhase, joinGame, chooseTeam,
   saveFleet, setReady, fire, recordAnswer, modesOf, useSonar, useAirstrike,
+  setAvatar, crewAvatars,
 } from "./firebase.js";
 import {
-  FLEET, zoneFor, teamIndex, canPlace, randomFleet, shipCells, fleetComplete,
+  fleetFor, shipName, AVATARS, avatarOf, zoneFor, teamIndex, canPlace, randomFleet, shipCells, fleetComplete,
   cellName, zoneOwner, cellKey, gridSize, colLabel,
   POWERUPS, airstrikeCells, sonarCells, maxStorm,
 } from "./game.js";
@@ -24,7 +25,8 @@ const store = {
 
 const state = {
   uid: null, code: null, game: null, stop: null,
-  placing: { shipId: FLEET[0].id, dir: "h", hover: null },
+  placing: { shipId: null, dir: "h", hover: null },
+  avatar: null,
   target: null, busy: false,
 };
 
@@ -36,6 +38,23 @@ setInterval(() => {
 }, 1000);
 $("join-code").value = store.get("bs_code") || "";
 $("join-name").value = store.get("bs_name") || "";
+state.avatar = avatarOf(store.get("bs_avatar")) || AVATARS[Math.floor(Math.random() * AVATARS.length)];
+drawAvatarPicker($("avatar-picker"));
+
+// Avatar grid: used on the join screen and while waiting in the lobby
+function drawAvatarPicker(el) {
+  const legend = el.querySelector("legend").outerHTML;
+  el.innerHTML = legend + AVATARS.map((a) =>
+    `<button type="button" class="avatar-opt" role="radio" data-avatar="${a}" aria-checked="${a === state.avatar}" aria-label="Avatar ${a}">${a}</button>`).join("");
+  el.onclick = (e) => {
+    const b = e.target.closest("[data-avatar]");
+    if (!b) return;
+    state.avatar = b.dataset.avatar;
+    store.set("bs_avatar", state.avatar);
+    el.querySelectorAll(".avatar-opt").forEach((x) => x.setAttribute("aria-checked", x === b));
+    if (state.code && state.game && state.game.players && state.game.players[state.uid]) setAvatar(state.code, state.uid, state.avatar);
+  };
+}
 
 ensureSignedIn().then((user) => {
   state.uid = user.uid;
@@ -58,7 +77,7 @@ async function tryJoin(code, name, silent) {
   }
   // after a refresh, don't drop students back into a game that has already ended
   if (silent && phase === "finished") { store.set("bs_code", ""); $("join-code").value = ""; return; }
-  await joinGame(code, state.uid, name);
+  await joinGame(code, state.uid, name, state.avatar);
   store.set("bs_code", code);
   store.set("bs_name", name);
   state.code = code;
@@ -81,8 +100,8 @@ function render() {
   const team = me.team && g.teams[me.team];
 
   $("who").innerHTML = team
-    ? `<span class="pennant" style="--tc:${team.color}"></span>${escapeHtml(me.name)}, ${escapeHtml(team.name)} <span class="code">Code ${state.code}</span>`
-    : `${escapeHtml(me.name)} <span class="code">Code ${state.code}</span>`;
+    ? `<span class="pennant" style="--tc:${team.color}"></span>${avatarOf(me.avatar)} ${escapeHtml(me.name)}, ${escapeHtml(team.name)} <span class="code">Code ${state.code}</span>`
+    : `${avatarOf(me.avatar)} ${escapeHtml(me.name)} <span class="code">Code ${state.code}</span>`;
 
   watchEvents(g, me.team);
   if (!team && g.phase !== "finished") return renderTeamPicker(g);
@@ -113,14 +132,13 @@ function watchEvents(g, teamId) {
     if (seen.shots.has(k)) continue;
     seen.shots.add(k);
     if (teamId && shot.target === teamId && shot.hit) {
-      const ship = FLEET.find((f) => f.id === shot.ship);
-      toast(`Incoming! ${g.teams[shot.by].name} hit your ${ship ? ship.name.toLowerCase() : "ship"} at ${cellName(shot.r, shot.c)}.`, "alert");
+      toast(`Incoming! ${g.teams[shot.by].name} hit your ${shipName(g.settings, shot.ship).toLowerCase()} at ${cellName(shot.r, shot.c)}.`, "alert");
       sfx.incoming();
     }
   }
   if ((g.storm || 0) > seen.storm) {
     seen.storm = g.storm;
-    toast(g.storm >= maxStorm(g.settings.teamCount)
+    toast(g.storm >= maxStorm(g.settings)
       ? "The storm is at full strength!"
       : "The storm closes in! Ships in the storm are visible to everyone.", "storm");
     sfx.storm();
@@ -135,7 +153,7 @@ function watchEvents(g, teamId) {
 function renderTeamPicker(g) {
   show("team");
   $("team-picker").innerHTML = Object.entries(g.teams).map(([id, t]) => {
-    const crew = Object.values(g.players || {}).filter((p) => p.team === id).map((p) => escapeHtml(p.name));
+    const crew = Object.values(g.players || {}).filter((p) => p.team === id).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
     return `<li><button class="team-btn" data-team="${id}" style="--tc:${t.color}" ${t.alive ? "" : "disabled"}>
       <span class="pennant"></span><strong>${escapeHtml(t.name)}</strong>
       <span class="crew">${crew.length ? crew.join(", ") : "No crew yet"}</span></button></li>`;
@@ -149,20 +167,23 @@ function renderTeamPicker(g) {
 function renderWaiting(g, team) {
   show("wait");
   $("wait-title").textContent = `You're aboard with ${team.name}`;
+  if (!$("wait-avatar").querySelector(".avatar-opt")) drawAvatarPicker($("wait-avatar"));
   renderTeams($("wait-teams"), g, g.players[state.uid].team);
 }
 
 // ---------------- placement ----------------
 function currentShip(g, teamId) {
   const p = state.placing;
-  const proto = FLEET.find((s) => s.id === p.shipId);
+  const proto = fleetFor(g.settings).find((s) => s.id === p.shipId);
   if (!proto || !p.hover) return null;
   return { ...proto, dir: p.dir, r: p.hover[0], c: p.hover[1] };
 }
 
 function renderPlacement(g, teamId) {
-  const zone = zoneFor(teamIndex(teamId), g.settings.teamCount);
+  const zone = zoneFor(teamIndex(teamId), g.settings);
   const fleet = (g.fleets && g.fleets[teamId]) || {};
+  const protos = fleetFor(g.settings);
+  if (!protos.some((s) => s.id === state.placing.shipId)) state.placing.shipId = protos[0].id;
   const ready = g.teams[teamId].ready;
   const cand = !ready && currentShip(g, teamId);
 
@@ -177,24 +198,25 @@ function renderPlacement(g, teamId) {
     },
   });
 
-  const shipsHtml = FLEET.map((s) => {
-    const placed = !!fleet[s.id];
+  const shipsHtml = protos.map((s) => {
+    const placed = fleet[s.id];
     const sel = s.id === state.placing.shipId;
+    const icon = placed && avatarOf(placed.icon);
     return `<li><button class="ship-pick ${sel ? "sel" : ""} ${placed ? "placed" : ""}" data-ship="${s.id}" ${ready ? "disabled" : ""}>
-      <span class="ship-bar" style="--len:${s.len}"></span>${s.name} <small>${s.len} squares${placed ? ", placed" : ""}</small></button></li>`;
+      <span class="ship-bar" style="--len:${s.len}"></span>${s.name}${icon ? ` <span class="ship-av" aria-hidden="true">${icon}</span>` : ""} <small>${s.len} squares${placed ? ", placed" : ""}</small></button></li>`;
   }).join("");
 
   $("panel").innerHTML = `
     <h2>Place your fleet</h2>
-    <p class="hint">Your home waters are the bright squares. Pick a ship, then tap where its ${state.placing.dir === "h" ? "left" : "top"} end goes. Your whole crew sees the same fleet.</p>
+    <p class="hint">Your home waters are the bright squares. Pick a ship, then tap where its ${state.placing.dir === "h" ? "left" : "top"} end goes. ${avatarOf(g.players[state.uid].avatar) ? `Ships you place carry your avatar ${avatarOf(g.players[state.uid].avatar)}. ` : ""}Your whole crew sees the same fleet.</p>
     <ul class="ship-list">${shipsHtml}</ul>
     <div class="btn-row">
       <button class="btn" data-action="rotate" ${ready ? "disabled" : ""}>Rotate (${state.placing.dir === "h" ? "across" : "down"})</button>
       <button class="btn" data-action="random" ${ready ? "disabled" : ""}>Random</button>
     </div>
-    <button class="btn primary wide" data-action="ready" ${fleetComplete(fleet) ? "" : "disabled"}>
+    <button class="btn primary wide" data-action="ready" ${fleetComplete(fleet, g.settings) ? "" : "disabled"}>
       ${ready ? "Unlock fleet" : "Lock in fleet"}</button>
-    <p class="hint">${ready ? "Locked in. Waiting for the other teams and your teacher." : fleetComplete(fleet) ? "All ships placed. Lock in when your crew agrees." : "Place all four ships to lock in."}</p>
+    <p class="hint">${ready ? "Locked in. Waiting for the other teams and your teacher." : fleetComplete(fleet, g.settings) ? "All ships placed. Lock in when your crew agrees." : `Place all ${protos.length} ships to lock in.`}</p>
     <h3>Teams</h3><ul class="teams" id="teams"></ul>`;
   renderTeams($("teams"), g, teamId);
 
@@ -203,7 +225,14 @@ function renderPlacement(g, teamId) {
     if (shipBtn) { state.placing.shipId = shipBtn.dataset.ship; return renderPlacement(g, teamId); }
     const act = e.target.closest("[data-action]")?.dataset.action;
     if (act === "rotate") { state.placing.dir = state.placing.dir === "h" ? "v" : "h"; renderPlacement(g, teamId); }
-    if (act === "random") await saveFleet(state.code, teamId, randomFleet(zone));
+    if (act === "random") {
+      // share the ships out between the crew's avatars, starting with yours
+      const mine = avatarOf(g.players[state.uid].avatar);
+      const icons = [...new Set([mine, ...crewAvatars(g, teamId)].filter(Boolean))];
+      const next = randomFleet(zone, g.settings, icons);
+      if (next) await saveFleet(state.code, teamId, next);
+      else toast("Couldn't fit the fleet. Try again.");
+    }
     if (act === "ready") await setReady(state.code, teamId, !ready);
   };
 }
@@ -216,10 +245,13 @@ async function placeAt(g, teamId, zone, fleet, r, c) {
     state.placing.dir = onShip.dir;
     return renderPlacement(g, teamId);
   }
-  const proto = FLEET.find((s) => s.id === state.placing.shipId);
+  const protos = fleetFor(g.settings);
+  const proto = protos.find((s) => s.id === state.placing.shipId);
   const ship = { ...proto, dir: state.placing.dir, r, c };
+  const icon = avatarOf(g.players[state.uid].avatar);
+  if (icon) ship.icon = icon;
   if (!canPlace(fleet, ship, zone)) return toast("That ship doesn't fit there.");
-  const next = FLEET.find((s) => !fleet[s.id] && s.id !== ship.id);
+  const next = protos.find((s) => !fleet[s.id] && s.id !== ship.id);
   if (next) state.placing.shipId = next.id;
   await saveFleet(state.code, teamId, { ...fleet, [ship.id]: ship });
 }
@@ -259,8 +291,8 @@ function renderBattle(g, teamId) {
   const pu = team.powerups || {};
   if (battle.weapon !== "shot" && !(pu[battle.weapon] > 0)) battle.weapon = "shot";
   let area = null;
-  if (battle.tab === "fire" && state.target && battle.weapon === "sonar") area = sonarCells(...state.target, g.settings.teamCount);
-  if (battle.tab === "fire" && state.target && battle.weapon === "airstrike") area = airstrikeCells(...state.target, g.settings.teamCount);
+  if (battle.tab === "fire" && state.target && battle.weapon === "sonar") area = sonarCells(...state.target, g.settings);
+  if (battle.tab === "fire" && state.target && battle.weapon === "airstrike") area = airstrikeCells(...state.target, g.settings);
 
   renderOcean($("ocean"), g, {
     myTeam: teamId,
@@ -305,7 +337,7 @@ function renderBattle(g, teamId) {
 }
 
 function stormLine(g) {
-  const lvl = g.storm || 0, max = maxStorm(g.settings.teamCount);
+  const lvl = g.storm || 0, max = maxStorm(g.settings);
   if (!lvl && !g.stormNextAt) return "";
   const next = g.stormNextAt && lvl < max ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;
   const t = next !== null ? `${Math.floor(next / 60)}:${String(next % 60).padStart(2, "0")}` : null;
@@ -336,7 +368,7 @@ function onChartTap(g, teamId, r, c) {
   }
   const needsFresh = battle.tab !== "fire" || battle.weapon === "shot";
   if (needsFresh && g.shots && g.shots[cellKey(r, c)]) return toast(`${cellName(r, c)} has already been hit.`);
-  if (needsFresh && zoneOwner(r, c, g.settings.teamCount) === teamId) return toast("That's your own waters.");
+  if (needsFresh && zoneOwner(r, c, g.settings) === teamId) return toast("That's your own waters.");
   state.target = [r, c];
   if (battle.tab !== "fire") { battle.tab = "fire"; renderTab(g, teamId); }
   render();
@@ -391,7 +423,7 @@ async function onPanelClick(e, teamId) {
   if (weaponBtn) {
     battle.weapon = weaponBtn.dataset.weapon;
     // a plain shot can't go at a square that's already been hit
-    if (battle.weapon === "shot" && state.target && ((g.shots && g.shots[cellKey(...state.target)]) || zoneOwner(...state.target, g.settings.teamCount) === teamId)) state.target = null;
+    if (battle.weapon === "shot" && state.target && ((g.shots && g.shots[cellKey(...state.target)]) || zoneOwner(...state.target, g.settings) === teamId)) state.target = null;
     render(); return;
   }
   const act = e.target.closest("[data-action]")?.dataset.action;
@@ -555,7 +587,7 @@ function launchTorpedo(g, teamId) {
   const T = battle.torpedo;
   if (Date.now() < T.readyAt) return;
   // aim at a random square in a surviving enemy's waters that hasn't been hit
-  const n = g.settings.teamCount;
+  const n = g.settings;
   const { rows, cols } = gridSize(n);
   const options = [];
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -620,7 +652,7 @@ function insertAtCursor(box, text) {
 async function runCode(teamId) {
   const C = battle.code;
   const g = state.game;
-  const { cols, rows } = gridSize(g.settings.teamCount);
+  const { cols, rows } = gridSize(g.settings);
   C.log = [];
   let result;
   try {

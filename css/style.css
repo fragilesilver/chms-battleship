@@ -416,3 +416,30 @@ body.projector .axis { font-size: 1.1rem; }
   .proj-lobby, .proj-battle { grid-template-columns: 1fr; }
   .lj-code { font-size: 6rem; }
 }
+
+/* ---------- avatars ---------- */
+.cell .ship-icon {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: min(1.2rem, 70%); line-height: 1; pointer-events: none;
+}
+.cell.ship.sunk .ship-icon { filter: grayscale(1); opacity: .55; }
+.avatar-picker {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(2.8rem, 1fr)); gap: .35rem;
+  margin: .3rem 0 0; padding: 0; border: 0;
+}
+.avatar-picker legend { padding: 0; margin-bottom: .3rem; }
+.avatar-opt {
+  aspect-ratio: 1; font-size: 1.5rem; line-height: 1; cursor: pointer;
+  border: 2px solid var(--line); border-radius: 8px; background: var(--card);
+  display: grid; place-items: center; padding: 0;
+}
+.avatar-opt:hover { border-color: var(--ink-soft); }
+.avatar-opt[aria-checked="true"] { border-color: var(--ink); background: var(--sea); box-shadow: inset 0 0 0 2px var(--ink); }
+.av { display: inline-block; margin-right: .2rem; }
+.ship-pick .ship-av { font-size: 1.1rem; }
+.fleet-table { display: grid; grid-template-columns: 1fr auto; gap: .35rem .8rem; align-items: center; }
+.fleet-table input { width: 4.5rem; }
+.fleet-sum { grid-column: 1 / 3; color: var(--ink-soft); font-size: .92rem; margin: .2rem 0 0; }
+.fleet-sum.bad { color: var(--hit); font-weight: 700; }
+.cell.hit::before, .cell.hit::after { z-index: 1; }
+.cell.hit .ship-icon { opacity: .6; }

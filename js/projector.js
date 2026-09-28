@@ -3,7 +3,7 @@
 //  Read-only: shows the ocean without anyone's hidden ships.
 // ============================================================
 import { ensureSignedIn, watchGame, gameExists } from "./firebase.js";
-import { maxStorm, fleetComplete } from "./game.js";
+import { maxStorm, fleetComplete, avatarOf } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { sfx, muteButton } from "./sound.js";
 
@@ -78,14 +78,14 @@ function renderLobby(g) {
 
   const players = Object.values(g.players || {});
   const ids = Object.keys(g.teams);
-  const ready = ids.filter((id) => g.teams[id].ready && fleetComplete(g.fleets && g.fleets[id])).length;
+  const ready = ids.filter((id) => g.teams[id].ready && fleetComplete(g.fleets && g.fleets[id], g.settings)).length;
   $("lobby-status").textContent = g.phase === "lobby"
     ? `${players.length} sailor${players.length === 1 ? "" : "s"} aboard`
     : `Placing fleets: ${ready} of ${ids.length} crews locked in`;
 
   $("lobby-teams").innerHTML = Object.entries(g.teams).map(([id, t]) => {
-    const crew = players.filter((p) => p.team === id).map((p) => escapeHtml(p.name));
-    const locked = g.phase === "placement" && t.ready && fleetComplete(g.fleets && g.fleets[id]);
+    const crew = players.filter((p) => p.team === id).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
+    const locked = g.phase === "placement" && t.ready && fleetComplete(g.fleets && g.fleets[id], g.settings);
     return `<div class="lobby-team" style="--tc:${t.color}">
       <h3><span class="pennant"></span>${escapeHtml(t.name)}${locked ? ' <span class="locked">locked in</span>' : ""}</h3>
       <p>${crew.join(", ") || "Waiting for crew"}</p></div>`;
@@ -93,7 +93,7 @@ function renderLobby(g) {
 }
 
 function renderStorm(g) {
-  const lvl = g.storm || 0, max = maxStorm(g.settings.teamCount);
+  const lvl = g.storm || 0, max = maxStorm(g.settings);
   const el = $("proj-storm");
   if (g.phase !== "battle" || (!lvl && !g.stormNextAt)) { el.innerHTML = ""; return; }
   const secs = g.stormNextAt && lvl < max ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;

@@ -30,6 +30,9 @@
         <label>Your name
           <input id="join-name" maxlength="20" required placeholder="First name">
         </label>
+        <fieldset class="avatar-picker" id="avatar-picker" role="radiogroup" aria-label="Your avatar">
+          <legend>Pick your avatar. It goes on the ships you place.</legend>
+        </fieldset>
         <button class="btn primary" type="submit">Join game</button>
         <p class="msg" id="join-msg" role="alert"></p>
       </form>
@@ -46,6 +49,9 @@
     <section id="screen-wait" class="screen" hidden>
       <h2 id="wait-title">You're aboard</h2>
       <p>Waiting for your teacher to open fleet placement.</p>
+      <fieldset class="avatar-picker" id="wait-avatar" role="radiogroup" aria-label="Your avatar">
+        <legend>Change your avatar</legend>
+      </fieldset>
       <ul class="teams" id="wait-teams"></ul>
     </section>
 

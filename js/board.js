@@ -2,7 +2,8 @@
 //  board.js  -  draws the shared ocean chart
 // ============================================================
 import {
-  ZONE, gridSize, colLabel, cellKey, zoneOwner, shipList, shipCells, isSunk, inStorm,
+  zoneSizeOf, gridSize, colLabel, cellKey, zoneOwner, shipList, shipCells, isSunk, inStorm,
+  fleetFor, avatarOf,
 } from "./game.js";
 
 /**
@@ -17,8 +18,9 @@ import {
  *   area         [[r,c]...] squares a power-up will cover
  */
 export function renderOcean(el, game, opts = {}) {
-  const n = game.settings.teamCount;
+  const n = game.settings;
   const { cols, rows } = gridSize(n);
+  const zone = zoneSizeOf(n);
   const shots = game.shots || {};
   const storm = game.storm || 0;
 
@@ -28,6 +30,8 @@ export function renderOcean(el, game, opts = {}) {
     for (const ship of shipList(fleet)) {
       const sunk = isSunk(ship, shots);
       const always = opts.revealAll || tid === opts.myTeam || sunk;
+      const icon = avatarOf(ship.icon);
+      const mid = Math.floor((ship.len - 1) / 2);   // the icon sits on the middle square
       shipCells(ship).forEach(([r, c], i) => {
         const spotted = !always && inStorm(r, c, n, storm);   // exposed by the storm
         if (!always && !spotted) return;
@@ -36,6 +40,7 @@ export function renderOcean(el, game, opts = {}) {
           sunk,
           end: i === 0 ? "start" : i === ship.len - 1 ? "end" : "",
           dir: ship.dir,
+          icon: i === mid ? icon : "",
         };
       });
     }
@@ -55,8 +60,8 @@ export function renderOcean(el, game, opts = {}) {
       const owner = zoneOwner(r, c, n);
       const team = owner && game.teams[owner];
       const cls = ["cell"];
-      if (c % ZONE === 0) cls.push("zl");
-      if (r % ZONE === 0) cls.push("zt");
+      if (c % zone === 0) cls.push("zl");
+      if (r % zone === 0) cls.push("zt");
       if (!team) cls.push("open-water");
       else if (!team.alive) cls.push("dead-zone");
       if (owner === opts.myTeam) cls.push("mine");
@@ -76,7 +81,7 @@ export function renderOcean(el, game, opts = {}) {
         (ship && !shot ? ", ship" : "") + (!shot && intel[key] ? ", sonar contact" : "");
       html += `<button class="${cls.join(" ")}" data-r="${r}" data-c="${c}"` +
         (team ? ` style="--tc:${team.color}"` : "") +
-        ` aria-label="${label}"></button>`;
+        ` aria-label="${label}">${ship && ship.icon ? `<span class="ship-icon" aria-hidden="true">${ship.icon}</span>` : ""}</button>`;
     }
   }
   html += `</div>`;
@@ -101,7 +106,7 @@ export function renderTeams(el, game, myTeam) {
   const shots = game.shots || {};
   el.innerHTML = Object.entries(game.teams).map(([id, t]) => {
     const fleet = game.fleets && game.fleets[id];
-    const afloat = fleet ? shipList(fleet).filter((s) => !isSunk(s, shots)).length : 4;
+    const afloat = fleet ? shipList(fleet).filter((s) => !isSunk(s, shots)).length : fleetFor(game.settings).length;
     const members = Object.values(game.players || {}).filter((p) => p.team === id).length;
     return `<li class="team-row ${t.alive ? "" : "out"} ${id === myTeam ? "me" : ""}" style="--tc:${t.color}">
       <span class="pennant" aria-hidden="true"></span>
