@@ -43,6 +43,11 @@ export function watchGame(code, callback) {
   return onValue(gameRef(code), (snap) => callback(snap.val()));
 }
 
+// "lobby", "placement", "battle", "finished", or null if there's no such game
+export async function getPhase(code) {
+  return (await get(gameRef(code, "phase"))).val();
+}
+
 export async function gameExists(code) {
   return (await get(gameRef(code, "phase"))).exists();
 }

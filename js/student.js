@@ -2,7 +2,7 @@
 //  student.js  -  join, pick team, place fleet, fire
 // ============================================================
 import {
-  ensureSignedIn, watchGame, gameExists, joinGame, chooseTeam,
+  ensureSignedIn, watchGame, getPhase, joinGame, chooseTeam,
   saveFleet, setReady, fire, recordAnswer, modesOf, useSonar, useAirstrike,
 } from "./firebase.js";
 import {
@@ -51,10 +51,13 @@ $("join-form").addEventListener("submit", (e) => {
 async function tryJoin(code, name, silent) {
   if (!state.uid) return showMsg("Still connecting. Try again in a moment.");
   if (!name) return showMsg("Enter your name.");
-  if (!(await gameExists(code))) {
+  const phase = await getPhase(code);
+  if (!phase) {
     if (!silent) showMsg(`No game with code ${code}. Check the board and try again.`);
     return;
   }
+  // after a refresh, don't drop students back into a game that has already ended
+  if (silent && phase === "finished") { store.set("bs_code", ""); $("join-code").value = ""; return; }
   await joinGame(code, state.uid, name);
   store.set("bs_code", code);
   store.set("bs_name", name);
@@ -653,6 +656,29 @@ async function runCode(teamId) {
 }
 
 // ---------------- finished ----------------
+// Leave the finished game and go back to the join screen (name stays filled in)
+function leaveGame() {
+  if (state.stop) state.stop();
+  Object.assign(state, { code: null, game: null, stop: null, target: null, busy: false });
+  Object.assign(seen, { shots: null, storm: 0, won: false });
+  Object.assign(battle, { tab: "fire", weapon: "shot" });
+  Object.assign(battle.torpedo, { snippet: null, cell: null, result: null, readyAt: 0 });
+  battle.quiz.lockUntil = 0;
+  battle.code.log = [];
+  store.set("bs_code", "");
+  const panel = $("panel");
+  panel.dataset.key = "";
+  panel.innerHTML = "";
+  panel.onclick = null;
+  $("ocean").innerHTML = "";
+  $("who").innerHTML = "";
+  $("join-code").value = "";
+  $("join-name").value = store.get("bs_name") || "";
+  showMsg("");
+  show("join");
+  $("join-code").focus();
+}
+
 function renderFinished(g, teamId) {
   renderOcean($("ocean"), g, { myTeam: teamId, revealAll: true });
   const w = g.winner && g.teams[g.winner];
@@ -661,11 +687,12 @@ function renderFinished(g, teamId) {
       <h2>${w ? `${escapeHtml(w.name)} win!` : "Game over"}</h2>
       <p>${w && g.winner === teamId ? "Your crew is the last fleet afloat." : "Every ship is now shown on the chart."}</p>
     </div>
+    <button class="btn primary wide" data-action="leave">Join a new game</button>
     <h3>Teams</h3><ul class="teams" id="teams"></ul>
     <h3>Battle log</h3><ol class="feed" id="feed"></ol>`;
   renderTeams($("teams"), g, teamId);
   renderFeed($("feed"), g);
-  $("panel").onclick = null;
+  $("panel").onclick = (e) => { if (e.target.closest('[data-action="leave"]')) leaveGame(); };
 }
 
 // ---------------- toast ----------------
