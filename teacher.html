@@ -29,12 +29,21 @@
           <legend>Team names</legend>
           <div id="team-names"></div>
         </fieldset>
+        <fieldset>
+          <legend>Ways to earn and fire shots</legend>
+          <label class="check"><input type="checkbox" id="mode-quiz" checked> Earn shots by answering pseudocode questions</label>
+          <label class="check"><input type="checkbox" id="mode-torpedo" checked> Torpedoes: trace code to find the target</label>
+          <label class="check"><input type="checkbox" id="mode-console" checked> Code console: write FIRE commands in pseudocode</label>
+        </fieldset>
         <div class="two-col">
           <label>Starting shots
-            <input id="start-ammo" type="number" min="0" max="5" value="3">
+            <input id="start-ammo" type="number" min="0" max="8" value="3">
           </label>
-          <label>Free shot every (seconds)
-            <input id="reload-secs" type="number" min="10" max="300" value="30">
+          <label>Free shot every (seconds, 0 = off)
+            <input id="reload-secs" type="number" min="0" max="600" value="90">
+          </label>
+          <label>Torpedo reload (seconds)
+            <input id="torpedo-secs" type="number" min="5" max="300" value="30">
           </label>
         </div>
         <button class="btn primary" type="submit">Create game</button>
@@ -80,6 +89,7 @@
           <h3>Teams</h3>
           <ul class="teams" id="teams"></ul>
           <h3>Crew list</h3>
+          <p class="hint">Numbers show questions right out of questions answered.</p>
           <div id="crews" class="crews"></div>
           <h3>Battle log</h3>
           <ol class="feed" id="feed"></ol>

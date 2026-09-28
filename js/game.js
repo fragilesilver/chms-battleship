@@ -5,7 +5,7 @@
 // ============================================================
 
 export const ZONE = 8;           // each team's home waters are 8 x 8
-export const MAX_AMMO = 5;       // a team can bank at most this many shots
+export const MAX_AMMO = 8;       // a team can bank at most this many shots
 
 export const FLEET = [
   { id: "carrier",   name: "Carrier",     len: 4 },

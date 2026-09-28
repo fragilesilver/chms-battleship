@@ -47,7 +47,10 @@ export async function gameExists(code) {
 }
 
 // ---------- teacher actions ----------
-export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs }) {
+export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
+export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
+
+export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -65,7 +68,10 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs }
   await set(gameRef(code), {
     phase: "lobby",
     createdAt: Date.now(),
-    settings: { teamCount, startAmmo, reloadSecs, maxAmmo: MAX_AMMO },
+    settings: {
+      teamCount, startAmmo, reloadSecs, maxAmmo: MAX_AMMO,
+      modes: modes || DEFAULT_MODES, torpedoSecs: torpedoSecs || 30,
+    },
     teams,
   });
   await addFeed(code, "Game created. Join with code " + code, "info");
@@ -99,6 +105,9 @@ export async function giveAmmo(code, game, amount) {
   );
 }
 
+export const setMode = (code, mode, on) =>
+  update(gameRef(code, "settings/modes"), { [mode]: on });
+
 export async function endGame(code) {
   await update(gameRef(code), { phase: "finished" });
   await addFeed(code, "The teacher ended the game.", "info");
@@ -120,7 +129,8 @@ export const saveFleet = (code, teamId, fleetObj) =>
 export const setReady = (code, teamId, ready) =>
   update(gameRef(code, `teams/${teamId}`), { ready });
 
-export async function fire(code, game, teamId, r, c, uid) {
+// opts.free = true for a torpedo (doesn't use a shot)
+export async function fire(code, game, teamId, r, c, uid, opts = {}) {
   const key = cellKey(r, c);
   const n = game.settings.teamCount;
   if (game.phase !== "battle") throw new Error("Firing isn't open right now.");
@@ -130,20 +140,22 @@ export async function fire(code, game, teamId, r, c, uid) {
 
   // 1. spend one shot (transaction stops two teammates spending the same shot)
   const ammoRef = gameRef(code, `teams/${teamId}/ammo`);
-  const spent = await runTransaction(ammoRef, (a) => ((a || 0) > 0 ? a - 1 : undefined));
-  if (!spent.committed) throw new Error("No shots left. Earn more to keep firing.");
+  if (!opts.free) {
+    const spent = await runTransaction(ammoRef, (a) => ((a || 0) > 0 ? a - 1 : undefined));
+    if (!spent.committed) throw new Error("No shots left. Earn more to keep firing.");
+  }
 
   // 2. claim the cell
   const found = findShipAt(game.fleets, r, c);
   const shot = {
-    r, c, by: teamId, uid, t: Date.now(),
+    r, c, by: teamId, uid, t: Date.now(), via: opts.via || "fire",
     hit: !!found,
     target: found ? found.teamId : null,
     ship: found ? found.ship.id : null,
   };
   const claimed = await runTransaction(gameRef(code, `shots/${key}`), (cur) => (cur ? undefined : shot));
   if (!claimed.committed) {
-    await runTransaction(ammoRef, (a) => (a || 0) + 1);   // refund
+    if (!opts.free) await runTransaction(ammoRef, (a) => (a || 0) + 1);   // refund
     throw new Error("Another team fired at " + cellName(r, c) + " first.");
   }
   if (!found) return { hit: false, cell: cellName(r, c) };
@@ -171,9 +183,29 @@ export async function fire(code, game, teamId, r, c, uid) {
       }
     }
   } else {
-    await addFeed(code, `${shooter} hit ${victim} at ${cellName(r, c)}`, "hit", teamId);
+    const how = opts.via === "torpedo" ? " with a torpedo" : opts.via === "code" ? " with code" : "";
+    await addFeed(code, `${shooter} hit ${victim} at ${cellName(r, c)}${how}`, "hit", teamId);
   }
   return result;
+}
+
+// ---------- earning shots ----------
+// Returns how many shots were actually added (0 if the magazine is full)
+export async function recordAnswer(code, game, teamId, uid, correct, reward) {
+  const field = correct ? "correct" : "wrong";
+  await Promise.all([
+    runTransaction(gameRef(code, `players/${uid}/${field}`), (n) => (n || 0) + 1),
+    runTransaction(gameRef(code, `teams/${teamId}/${field}`), (n) => (n || 0) + 1),
+  ]);
+  if (!correct || game.phase !== "battle") return 0;
+  const cap = game.settings.maxAmmo || MAX_AMMO;
+  let added = 0;
+  await runTransaction(gameRef(code, `teams/${teamId}/ammo`), (a) => {
+    const now = a || 0;
+    added = Math.max(0, Math.min(cap, now + reward) - now);
+    return now + added;
+  });
+  return added;
 }
 
 // ---------- kill feed ----------

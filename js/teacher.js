@@ -3,7 +3,7 @@
 // ============================================================
 import {
   ensureSignedIn, createGame, watchGame, gameExists, setPhase,
-  startBattle, giveAmmo, endGame, addFeed,
+  startBattle, giveAmmo, endGame, addFeed, setMode, modesOf,
 } from "./firebase.js";
 import { TEAM_PRESETS, fleetComplete } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
@@ -36,6 +36,12 @@ $("setup-form").addEventListener("submit", async (e) => {
     teamNames: [...document.querySelectorAll("#team-names input")].map((i) => i.value.trim()),
     startAmmo: +$("start-ammo").value,
     reloadSecs: +$("reload-secs").value,
+    torpedoSecs: +$("torpedo-secs").value,
+    modes: {
+      quiz: $("mode-quiz").checked,
+      torpedo: $("mode-torpedo").checked,
+      console: $("mode-console").checked,
+    },
   });
   openGame(code);
 });
@@ -86,17 +92,24 @@ function render() {
       <button class="btn primary" data-action="battle">Start battle</button>
       <button class="btn" data-action="lobby">Back to lobby</button>`;
   } else if (g.phase === "battle") {
+    const hasTimer = g.settings.reloadSecs > 0;
     html = `<div class="btn-row">
         <button class="btn" data-action="ammo1">Give every team +1 shot</button>
         <button class="btn" data-action="ammo3">+3 shots</button>
-        <button class="btn ${state.autoReload ? "on" : ""}" data-action="reload" aria-pressed="${state.autoReload}">
-          Free shots: ${state.autoReload ? `on, next in <span id="reload-left">${secsLeft}</span>s` : "paused"}</button>
+        ${hasTimer ? `<button class="btn ${state.autoReload ? "on" : ""}" data-action="reload" aria-pressed="${state.autoReload}">
+          Free shots: ${state.autoReload ? `on, next in <span id="reload-left">${secsLeft}</span>s` : "paused"}</button>` : ""}
         <button class="btn danger" data-action="end">End game</button>
       </div>`;
   } else {
     const w = g.winner && g.teams[g.winner];
     html = `<p class="big">${w ? `${escapeHtml(w.name)} win!` : "Game over."}</p>
       <button class="btn primary" data-action="new">Set up a new game</button>`;
+  }
+  if (g.phase === "placement" || g.phase === "battle") {
+    const m = modesOf(g);
+    const label = { quiz: "Questions", torpedo: "Torpedoes", console: "Code console" };
+    html += `<div class="btn-row modes">${Object.keys(label).map((k) =>
+      `<button class="btn ${m[k] ? "on" : ""}" data-action="mode" data-mode="${k}" aria-pressed="${m[k]}">${label[k]}: ${m[k] ? "on" : "off"}</button>`).join("")}</div>`;
   }
   $("controls").innerHTML = html;
   $("controls").onclick = onControl;
@@ -106,7 +119,8 @@ function render() {
   renderFeed($("feed"), g);
 
   $("crews").innerHTML = Object.entries(g.teams).map(([id, t]) => {
-    const names = Object.values(g.players || {}).filter((p) => p.team === id).map((p) => escapeHtml(p.name));
+    const names = Object.values(g.players || {}).filter((p) => p.team === id)
+      .map((p) => `${escapeHtml(p.name)}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
     return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${escapeHtml(t.name)}:</strong> ${names.join(", ") || "none yet"}</p>`;
   }).join("") + (() => {
     const loose = Object.values(g.players || {}).filter((p) => !p.team).map((p) => escapeHtml(p.name));
@@ -124,6 +138,10 @@ async function onControl(e) {
   if (act === "ammo1") { await giveAmmo(state.code, g, 1); toast("Every team got +1 shot."); }
   if (act === "ammo3") { await giveAmmo(state.code, g, 3); toast("Every team got +3 shots."); }
   if (act === "reload") { state.autoReload = !state.autoReload; state.nextReload = Date.now() + g.settings.reloadSecs * 1000; render(); }
+  if (act === "mode") {
+    const k = e.target.closest("[data-mode]").dataset.mode;
+    await setMode(state.code, k, !modesOf(g)[k]);
+  }
   if (act === "end" && confirm("End the game for everyone?")) await endGame(state.code);
   if (act === "new") location.reload();
 }
@@ -133,7 +151,7 @@ function startReloadClock() {
   clearInterval(state.timer);
   state.timer = setInterval(async () => {
     const g = state.game;
-    if (!g || g.phase !== "battle" || !state.autoReload) return;
+    if (!g || g.phase !== "battle" || !state.autoReload || !(g.settings.reloadSecs > 0)) return;
     if (!state.nextReload) state.nextReload = Date.now() + g.settings.reloadSecs * 1000;
     const left = Math.max(0, Math.ceil((state.nextReload - Date.now()) / 1000));
     const span = $("reload-left");
