@@ -45,6 +45,9 @@
           <label>Torpedo reload (seconds)
             <input id="torpedo-secs" type="number" min="5" max="300" value="30">
           </label>
+          <label>Storm closes in every (minutes, 0 = only when you click)
+            <input id="storm-mins" type="number" min="0" max="30" value="3">
+          </label>
         </div>
         <button class="btn primary" type="submit">Create game</button>
       </form>
@@ -70,6 +73,7 @@
           <span class="jb-label">Code</span>
           <span class="jb-code" id="join-code"></span>
         </div>
+        <a class="btn" id="projector-link" target="_blank" rel="noopener">Open projector view</a>
       </div>
 
       <ol class="phases" id="phases">

@@ -129,3 +129,41 @@ export function makeCode() {
   for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
+
+// ---------------- storm ----------------
+// The storm closes in from the edges of the ocean one ring at a time.
+// Ships inside the storm are exposed on everyone's chart.
+export function maxStorm(teamCount) {
+  const { cols, rows } = gridSize(teamCount);
+  return Math.floor(Math.min(cols, rows) / 2) - 1;
+}
+
+export function inStorm(r, c, teamCount, level) {
+  if (!level) return false;
+  const { cols, rows } = gridSize(teamCount);
+  return Math.min(r, c, rows - 1 - r, cols - 1 - c) < level;
+}
+
+// ---------------- power-ups ----------------
+export const POWERUPS = {
+  sonar: { name: "Sonar", verb: "Ping sonar", help: "Scans a 3 × 3 area. Your crew sees which squares hide a ship. Nobody else does." },
+  airstrike: { name: "Airstrike", verb: "Call airstrike", help: "Hits the square you pick and the four squares next to it. Uses no shots." },
+};
+export const STREAK_FOR_POWERUP = 3;   // correct answers in a row
+
+function inGrid(r, c, teamCount) {
+  const { cols, rows } = gridSize(teamCount);
+  return r >= 0 && c >= 0 && r < rows && c < cols;
+}
+
+export function airstrikeCells(r, c, teamCount) {
+  return [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].filter(([a, b]) => inGrid(a, b, teamCount));
+}
+
+export function sonarCells(r, c, teamCount) {
+  const out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (inGrid(r + dr, c + dc, teamCount)) out.push([r + dr, c + dc]);
+  }
+  return out;
+}

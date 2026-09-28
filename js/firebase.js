@@ -9,6 +9,7 @@ import {
 import {
   TEAM_PRESETS, MAX_AMMO, teamIds, makeCode, cellKey, cellName, zoneOwner,
   findShipAt, isSunk, shipsAfloat, randomFleet, zoneFor, teamIndex, fleetComplete,
+  maxStorm, airstrikeCells, sonarCells, STREAK_FOR_POWERUP, POWERUPS,
 } from "./game.js";
 
 const firebaseConfig = {
@@ -50,7 +51,7 @@ export async function gameExists(code) {
 export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
 export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
 
-export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs }) {
+export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -62,6 +63,7 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, 
       ammo: startAmmo,
       alive: true,
       ready: false,
+      powerups: { sonar: 0, airstrike: 0 },
     };
   });
 
@@ -71,7 +73,9 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, 
     settings: {
       teamCount, startAmmo, reloadSecs, maxAmmo: MAX_AMMO,
       modes: modes || DEFAULT_MODES, torpedoSecs: torpedoSecs || 30,
+      stormMins: stormMins || 0,
     },
+    storm: 0,
     teams,
   });
   await addFeed(code, "Game created. Join with code " + code, "info");
@@ -91,6 +95,8 @@ export async function startBattle(code, game) {
     updates[`teams/${id}/ready`] = true;
   }
   updates.phase = "battle";
+  updates.storm = 0;
+  updates.stormNextAt = game.settings.stormMins > 0 ? Date.now() + game.settings.stormMins * 60000 : null;
   await update(gameRef(code), updates);
   await addFeed(code, "Battle stations! Firing is open.", "info");
 }
@@ -183,7 +189,7 @@ export async function fire(code, game, teamId, r, c, uid, opts = {}) {
       }
     }
   } else {
-    const how = opts.via === "torpedo" ? " with a torpedo" : opts.via === "code" ? " with code" : "";
+    const how = { torpedo: " with a torpedo", code: " with code", airstrike: " in an airstrike" }[opts.via] || "";
     await addFeed(code, `${shooter} hit ${victim} at ${cellName(r, c)}${how}`, "hit", teamId);
   }
   return result;
@@ -197,7 +203,12 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward) {
     runTransaction(gameRef(code, `players/${uid}/${field}`), (n) => (n || 0) + 1),
     runTransaction(gameRef(code, `teams/${teamId}/${field}`), (n) => (n || 0) + 1),
   ]);
-  if (!correct || game.phase !== "battle") return 0;
+  if (!correct) {
+    await set(gameRef(code, `players/${uid}/streak`), 0);
+    return { added: 0, powerup: null };
+  }
+  if (game.phase !== "battle") return { added: 0, powerup: null };
+
   const cap = game.settings.maxAmmo || MAX_AMMO;
   let added = 0;
   await runTransaction(gameRef(code, `teams/${teamId}/ammo`), (a) => {
@@ -205,8 +216,84 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward) {
     added = Math.max(0, Math.min(cap, now + reward) - now);
     return now + added;
   });
-  return added;
+
+  // every STREAK_FOR_POWERUP correct answers in a row earns the crew a power-up
+  const streak = await runTransaction(gameRef(code, `players/${uid}/streak`),
+    (n) => ((n || 0) + 1 >= STREAK_FOR_POWERUP ? 0 : (n || 0) + 1));
+  let powerup = null;
+  if (streak.committed && streak.snapshot.val() === 0) {
+    powerup = Math.random() < 0.5 ? "sonar" : "airstrike";
+    await runTransaction(gameRef(code, `teams/${teamId}/powerups/${powerup}`), (n) => (n || 0) + 1);
+    const who = (game.players && game.players[uid] && game.players[uid].name) || "Someone";
+    await addFeed(code, `${who} earned ${game.teams[teamId].name} a${powerup === "airstrike" ? "n" : ""} ${POWERUPS[powerup].name.toLowerCase()} with ${STREAK_FOR_POWERUP} right in a row`, "power", teamId);
+  }
+  return { added, powerup };
 }
+
+// ---------------- power-ups ----------------
+async function spendPowerup(code, teamId, type) {
+  const t = await runTransaction(gameRef(code, `teams/${teamId}/powerups/${type}`), (n) => ((n || 0) > 0 ? n - 1 : undefined));
+  if (!t.committed) throw new Error(`Your crew has no ${POWERUPS[type].name.toLowerCase()} left.`);
+}
+
+export async function useSonar(code, game, teamId, r, c) {
+  if (game.phase !== "battle") throw new Error("Power-ups only work during the battle.");
+  await spendPowerup(code, teamId, "sonar");
+  const n = game.settings.teamCount;
+  const updates = {};
+  let found = 0;
+  for (const [a, b] of sonarCells(r, c, n)) {
+    if (zoneOwner(a, b, n) === teamId) continue;
+    const ship = !!findShipAt(game.fleets, a, b);
+    if (ship) found++;
+    updates[cellKey(a, b)] = ship;
+  }
+  await update(gameRef(code, `teams/${teamId}/intel`), updates);
+  return { found, cell: cellName(r, c) };
+}
+
+export async function useAirstrike(code, teamId, r, c, uid) {
+  let game = (await get(gameRef(code))).val();
+  if (game.phase !== "battle") throw new Error("Power-ups only work during the battle.");
+  const n = game.settings.teamCount;
+  const cells = airstrikeCells(r, c, n).filter(([a, b]) =>
+    zoneOwner(a, b, n) !== teamId && !(game.shots && game.shots[cellKey(a, b)]));
+  if (!cells.length) throw new Error("There's nothing left to hit there. Pick another square.");
+  await spendPowerup(code, teamId, "airstrike");
+  await addFeed(code, `${game.teams[teamId].name} called an airstrike on ${cellName(r, c)}`, "power", teamId);
+
+  const results = [];
+  for (const [a, b] of cells) {
+    try {
+      results.push(await fire(code, game, teamId, a, b, uid, { free: true, via: "airstrike" }));
+    } catch { /* square taken meanwhile, or the game ended */ }
+    game = (await get(gameRef(code))).val();
+    if (game.phase !== "battle") break;
+  }
+  return results;
+}
+
+export async function givePowerups(code, game) {
+  await Promise.all(Object.entries(game.teams).filter(([, t]) => t.alive).flatMap(([id]) => [
+    runTransaction(gameRef(code, `teams/${id}/powerups/sonar`), (n) => (n || 0) + 1),
+    runTransaction(gameRef(code, `teams/${id}/powerups/airstrike`), (n) => (n || 0) + 1),
+  ]));
+  await addFeed(code, "Supply drop! Every crew gets a sonar and an airstrike.", "power");
+}
+
+// ---------------- storm ----------------
+export async function advanceStorm(code, game) {
+  const max = maxStorm(game.settings.teamCount);
+  let level = 0;
+  const t = await runTransaction(gameRef(code, "storm"), (s) => ((s || 0) >= max ? undefined : (level = (s || 0) + 1)));
+  if (!t.committed) return false;
+  await addFeed(code, level === max
+    ? "The storm is at full strength. Only the centre of the ocean is safe."
+    : "The storm closes in! Ships in the storm are now visible to everyone.", "storm");
+  return true;
+}
+
+export const setStormNextAt = (code, when) => update(gameRef(code), { stormNextAt: when });
 
 // ---------- kill feed ----------
 export function addFeed(code, text, type = "info", teamId = null) {

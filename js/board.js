@@ -2,7 +2,7 @@
 //  board.js  -  draws the shared ocean chart
 // ============================================================
 import {
-  ZONE, gridSize, colLabel, cellKey, zoneOwner, shipList, shipCells, isSunk,
+  ZONE, gridSize, colLabel, cellKey, zoneOwner, shipList, shipCells, isSunk, inStorm,
 } from "./game.js";
 
 /**
@@ -13,21 +13,26 @@ import {
  *   preview      { cells:[[r,c]...], ok:bool } ghost ship while placing
  *   selected     [r,c] the chosen target
  *   onCell       function(r, c) called on click
+ *   intel        { cellKey: true/false } sonar results for this team
+ *   area         [[r,c]...] squares a power-up will cover
  */
 export function renderOcean(el, game, opts = {}) {
   const n = game.settings.teamCount;
   const { cols, rows } = gridSize(n);
   const shots = game.shots || {};
+  const storm = game.storm || 0;
 
   // which cells hold ships we are allowed to see
   const shipAt = {};
   for (const [tid, fleet] of Object.entries(game.fleets || {})) {
     for (const ship of shipList(fleet)) {
       const sunk = isSunk(ship, shots);
-      const visible = opts.revealAll || tid === opts.myTeam || sunk;
-      if (!visible) continue;
+      const always = opts.revealAll || tid === opts.myTeam || sunk;
       shipCells(ship).forEach(([r, c], i) => {
+        const spotted = !always && inStorm(r, c, n, storm);   // exposed by the storm
+        if (!always && !spotted) return;
         shipAt[cellKey(r, c)] = {
+          spotted,
           sunk,
           end: i === 0 ? "start" : i === ship.len - 1 ? "end" : "",
           dir: ship.dir,
@@ -36,8 +41,10 @@ export function renderOcean(el, game, opts = {}) {
     }
   }
   const previewSet = new Set((opts.preview?.cells || []).map(([r, c]) => cellKey(r, c)));
+  const areaSet = new Set((opts.area || []).map(([r, c]) => cellKey(r, c)));
+  const intel = opts.intel || {};
 
-  let html = `<div class="ocean" style="--cols:${cols}" role="grid" aria-label="Ocean chart">`;
+  let html = `<div class="ocean" style="--cols:${cols};--rows:${rows}" role="grid" aria-label="Ocean chart">`;
   html += `<div class="axis corner"></div>`;
   for (let c = 0; c < cols; c++) html += `<div class="axis col">${colLabel(c)}</div>`;
 
@@ -55,14 +62,18 @@ export function renderOcean(el, game, opts = {}) {
       if (owner === opts.myTeam) cls.push("mine");
       if (opts.activeZone && owner !== opts.activeZone) cls.push("inactive");
 
+      if (inStorm(r, c, n, storm)) cls.push("storm");
       const ship = shipAt[key];
-      if (ship) cls.push("ship", ship.dir === "h" ? "sh" : "sv", ship.end, ship.sunk ? "sunk" : "");
+      if (ship) cls.push("ship", ship.dir === "h" ? "sh" : "sv", ship.end, ship.sunk ? "sunk" : "", ship.spotted ? "spotted" : "");
       const shot = shots[key];
       if (shot) cls.push(shot.hit ? "hit" : "miss");
+      else if (key in intel && !ship) cls.push(intel[key] ? "intel-ship" : "intel-clear");
+      if (areaSet.has(key)) cls.push("area");
       if (previewSet.has(key)) cls.push(opts.preview.ok ? "ghost" : "ghost bad");
       if (opts.selected && opts.selected[0] === r && opts.selected[1] === c) cls.push("target");
 
-      const label = colLabel(c) + (r + 1) + (shot ? (shot.hit ? ", hit" : ", miss") : "");
+      const label = colLabel(c) + (r + 1) + (shot ? (shot.hit ? ", hit" : ", miss") : "") +
+        (ship && !shot ? ", ship" : "") + (!shot && intel[key] ? ", sonar contact" : "");
       html += `<button class="${cls.join(" ")}" data-r="${r}" data-c="${c}"` +
         (team ? ` style="--tc:${team.color}"` : "") +
         ` aria-label="${label}"></button>`;

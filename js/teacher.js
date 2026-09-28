@@ -4,8 +4,9 @@
 import {
   ensureSignedIn, createGame, watchGame, gameExists, setPhase,
   startBattle, giveAmmo, endGame, addFeed, setMode, modesOf,
+  advanceStorm, setStormNextAt, givePowerups,
 } from "./firebase.js";
-import { TEAM_PRESETS, fleetComplete } from "./game.js";
+import { TEAM_PRESETS, fleetComplete, maxStorm } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 
 const $ = (id) => document.getElementById(id);
@@ -37,6 +38,7 @@ $("setup-form").addEventListener("submit", async (e) => {
     startAmmo: +$("start-ammo").value,
     reloadSecs: +$("reload-secs").value,
     torpedoSecs: +$("torpedo-secs").value,
+    stormMins: +$("storm-mins").value,
     modes: {
       quiz: $("mode-quiz").checked,
       torpedo: $("mode-torpedo").checked,
@@ -63,6 +65,7 @@ function openGame(code) {
   $("screen-control").hidden = false;
   $("join-code").textContent = code;
   $("join-url").textContent = location.href.replace(/teacher\.html.*$/, "");
+  $("projector-link").href = location.href.replace(/teacher\.html.*$/, "") + "projector.html?code=" + code;
   if (state.stop) state.stop();
   state.stop = watchGame(code, (g) => { state.game = g; render(); });
   startReloadClock();
@@ -98,8 +101,10 @@ function render() {
         <button class="btn" data-action="ammo3">+3 shots</button>
         ${hasTimer ? `<button class="btn ${state.autoReload ? "on" : ""}" data-action="reload" aria-pressed="${state.autoReload}">
           Free shots: ${state.autoReload ? `on, next in <span id="reload-left">${secsLeft}</span>s` : "paused"}</button>` : ""}
+        <button class="btn" data-action="supply">Supply drop: sonar + airstrike for all</button>
         <button class="btn danger" data-action="end">End game</button>
-      </div>`;
+      </div>
+      ${stormControls(g)}`;
   } else {
     const w = g.winner && g.teams[g.winner];
     html = `<p class="big">${w ? `${escapeHtml(w.name)} win!` : "Game over."}</p>
@@ -128,6 +133,20 @@ function render() {
   })();
 }
 
+function fmt(secs) { return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`; }
+
+function stormControls(g) {
+  const lvl = g.storm || 0, max = maxStorm(g.settings.teamCount);
+  const auto = g.settings.stormMins > 0;
+  const next = g.stormNextAt ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;
+  return `<div class="btn-row storm-row">
+      <span class="storm-level">Storm ${lvl} of ${max}</span>
+      <button class="btn" data-action="storm" ${lvl >= max ? "disabled" : ""}>Close the storm in now</button>
+      ${auto && lvl < max ? `<button class="btn ${g.stormNextAt ? "on" : ""}" data-action="storm-auto" aria-pressed="${!!g.stormNextAt}">
+        Auto storm: ${g.stormNextAt ? `on, next in <span id="storm-left">${fmt(next)}</span>` : "paused"}</button>` : ""}
+    </div>`;
+}
+
 async function onControl(e) {
   const act = e.target.closest("[data-action]")?.dataset.action;
   const g = state.game;
@@ -142,15 +161,37 @@ async function onControl(e) {
     const k = e.target.closest("[data-mode]").dataset.mode;
     await setMode(state.code, k, !modesOf(g)[k]);
   }
+  if (act === "supply") { await givePowerups(state.code, g); toast("Supply drop sent."); }
+  if (act === "storm") {
+    await advanceStorm(state.code, g);
+    const max = maxStorm(g.settings.teamCount);
+    if (g.stormNextAt) await setStormNextAt(state.code, (g.storm || 0) + 1 >= max ? null : Date.now() + g.settings.stormMins * 60000);
+  }
+  if (act === "storm-auto") await setStormNextAt(state.code, g.stormNextAt ? null : Date.now() + g.settings.stormMins * 60000);
   if (act === "end" && confirm("End the game for everyone?")) await endGame(state.code);
   if (act === "new") location.reload();
 }
 
 // Free shots are handed out by this tab, so keep it open during the battle
+let stormBusy = false;
+async function stormTick(g) {
+  if (g.phase !== "battle" || !g.stormNextAt || stormBusy) return;
+  const span = $("storm-left");
+  if (span) span.textContent = fmt(Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)));
+  if (Date.now() < g.stormNextAt) return;
+  stormBusy = true;
+  try {
+    await advanceStorm(state.code, g);
+    const max = maxStorm(g.settings.teamCount);
+    await setStormNextAt(state.code, (g.storm || 0) + 1 >= max ? null : Date.now() + g.settings.stormMins * 60000);
+  } finally { stormBusy = false; }
+}
+
 function startReloadClock() {
   clearInterval(state.timer);
   state.timer = setInterval(async () => {
     const g = state.game;
+    if (g) stormTick(g);
     if (!g || g.phase !== "battle" || !state.autoReload || !(g.settings.reloadSecs > 0)) return;
     if (!state.nextReload) state.nextReload = Date.now() + g.settings.reloadSecs * 1000;
     const left = Math.max(0, Math.ceil((state.nextReload - Date.now()) / 1000));

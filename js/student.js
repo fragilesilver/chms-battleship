@@ -3,16 +3,18 @@
 // ============================================================
 import {
   ensureSignedIn, watchGame, gameExists, joinGame, chooseTeam,
-  saveFleet, setReady, fire, recordAnswer, modesOf,
+  saveFleet, setReady, fire, recordAnswer, modesOf, useSonar, useAirstrike,
 } from "./firebase.js";
 import {
   FLEET, zoneFor, teamIndex, canPlace, randomFleet, shipCells, fleetComplete,
   cellName, zoneOwner, cellKey, gridSize, colLabel,
+  POWERUPS, airstrikeCells, sonarCells, maxStorm,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { QUESTIONS, REWARD } from "./questions.js";
 import { makeTorpedo, normaliseCell } from "./trace.js";
 import { run as runPseudo } from "./pseudocode.js";
+import { sfx, muteButton } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -27,6 +29,11 @@ const state = {
 };
 
 // ---------------- start-up ----------------
+muteButton($("mute"));
+setInterval(() => {
+  const el = document.querySelector(".storm-line");
+  if (el && state.game) el.outerHTML = stormLine(state.game) || "<div class=\"storm-line\"></div>";
+}, 1000);
 $("join-code").value = store.get("bs_code") || "";
 $("join-name").value = store.get("bs_name") || "";
 
@@ -74,6 +81,7 @@ function render() {
     ? `<span class="pennant" style="--tc:${team.color}"></span>${escapeHtml(me.name)}, ${escapeHtml(team.name)} <span class="code">Code ${state.code}</span>`
     : `${escapeHtml(me.name)} <span class="code">Code ${state.code}</span>`;
 
+  watchEvents(g, me.team);
   if (!team && g.phase !== "finished") return renderTeamPicker(g);
   if (g.phase === "lobby") return renderWaiting(g, team);
   show("play");
@@ -86,6 +94,38 @@ function render() {
   if (g.phase === "placement") return renderPlacement(g, me.team);
   if (g.phase === "battle") return renderBattle(g, me.team);
   return renderFinished(g, me.team);
+}
+
+// ---------------- alerts for things other players did ----------------
+const seen = { shots: null, storm: 0, won: false };
+function watchEvents(g, teamId) {
+  const shots = g.shots || {};
+  if (seen.shots === null) {
+    seen.shots = new Set(Object.keys(shots));
+    seen.storm = g.storm || 0;
+    seen.won = g.phase === "finished";
+    return;
+  }
+  for (const [k, shot] of Object.entries(shots)) {
+    if (seen.shots.has(k)) continue;
+    seen.shots.add(k);
+    if (teamId && shot.target === teamId && shot.hit) {
+      const ship = FLEET.find((f) => f.id === shot.ship);
+      toast(`Incoming! ${g.teams[shot.by].name} hit your ${ship ? ship.name.toLowerCase() : "ship"} at ${cellName(shot.r, shot.c)}.`, "alert");
+      sfx.incoming();
+    }
+  }
+  if ((g.storm || 0) > seen.storm) {
+    seen.storm = g.storm;
+    toast(g.storm >= maxStorm(g.settings.teamCount)
+      ? "The storm is at full strength!"
+      : "The storm closes in! Ships in the storm are visible to everyone.", "storm");
+    sfx.storm();
+  }
+  if (g.phase === "finished" && !seen.won) {
+    seen.won = true;
+    if (g.winner) sfx.win();
+  }
 }
 
 // ---------------- team picker ----------------
@@ -194,6 +234,7 @@ const TABS = [
 
 const battle = {
   tab: "fire",
+  weapon: "shot",   // "shot", "sonar" or "airstrike"
   quiz: { q: null, order: null, picked: null, lockUntil: 0, note: "" },
   torpedo: { snippet: null, cell: null, result: null, readyAt: 0 },
   code: {
@@ -212,10 +253,18 @@ function renderBattle(g, teamId) {
   const t = state.target;
   if (t && g.shots && g.shots[cellKey(t[0], t[1])]) state.target = null;
 
+  const pu = team.powerups || {};
+  if (battle.weapon !== "shot" && !(pu[battle.weapon] > 0)) battle.weapon = "shot";
+  let area = null;
+  if (battle.tab === "fire" && state.target && battle.weapon === "sonar") area = sonarCells(...state.target, g.settings.teamCount);
+  if (battle.tab === "fire" && state.target && battle.weapon === "airstrike") area = airstrikeCells(...state.target, g.settings.teamCount);
+
   renderOcean($("ocean"), g, {
     myTeam: teamId,
     selected: battle.tab === "fire" ? state.target : null,
     onCell: team.alive ? (r, c) => onChartTap(g, teamId, r, c) : null,
+    intel: team.intel,
+    area,
   });
 
   const key = `battle:${teamId}:${team.alive}:${tabs.map((x) => x.id).join(",")}`;
@@ -242,12 +291,25 @@ function renderBattle(g, teamId) {
     const max = g.settings.maxAmmo;
     $("ammo").innerHTML = `
       <span class="ammo-n">${team.ammo}</span><span class="ammo-l">shot${team.ammo === 1 ? "" : "s"} for your crew</span>
-      <div class="shells">${Array.from({ length: max }, (_, i) => `<span class="shell ${i < team.ammo ? "full" : ""}"></span>`).join("")}</div>`;
+      <div class="shells">${Array.from({ length: max }, (_, i) => `<span class="shell ${i < team.ammo ? "full" : ""}"></span>`).join("")}</div>
+      <div class="pu-count">${pu.sonar || 0} sonar, ${pu.airstrike || 0} airstrike${pu.airstrike === 1 ? "" : "s"}</div>
+      ${stormLine(g)}`;
     panel.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === battle.tab));
     if (battle.tab === "fire") updateFireBox(g, teamId);
   }
   renderTeams($("teams"), g, teamId);
   renderFeed($("feed"), g);
+}
+
+function stormLine(g) {
+  const lvl = g.storm || 0, max = maxStorm(g.settings.teamCount);
+  if (!lvl && !g.stormNextAt) return "";
+  const next = g.stormNextAt && lvl < max ? Math.max(0, Math.round((g.stormNextAt - Date.now()) / 1000)) : null;
+  const t = next !== null ? `${Math.floor(next / 60)}:${String(next % 60).padStart(2, "0")}` : null;
+  const text = lvl
+    ? `Storm ${lvl} of ${max}${t ? `, closes in again in ${t}` : ""}`
+    : `Storm arrives in ${t}`;
+  return `<div class="storm-line">${text}</div>`;
 }
 
 // Tapping the chart does something different on each tab
@@ -269,8 +331,9 @@ function onChartTap(g, teamId, r, c) {
     if (input) input.value = cellName(r, c);
     return;
   }
-  if (g.shots && g.shots[cellKey(r, c)]) return toast(`${cellName(r, c)} has already been hit.`);
-  if (zoneOwner(r, c, g.settings.teamCount) === teamId) return toast("That's your own waters.");
+  const needsFresh = battle.tab !== "fire" || battle.weapon === "shot";
+  if (needsFresh && g.shots && g.shots[cellKey(r, c)]) return toast(`${cellName(r, c)} has already been hit.`);
+  if (needsFresh && zoneOwner(r, c, g.settings.teamCount) === teamId) return toast("That's your own waters.");
   state.target = [r, c];
   if (battle.tab !== "fire") { battle.tab = "fire"; renderTab(g, teamId); }
   render();
@@ -282,10 +345,11 @@ function renderTab(g, teamId) {
   if (battle.tab === "fire") {
     body.innerHTML = `
       <div class="fire-box">
+        <div class="weapons" role="radiogroup" aria-label="Weapon" id="weapons"></div>
         <span class="target-label">Target</span>
         <span class="target-cell" id="target-cell"></span>
         <button class="btn fire wide" data-action="fire" id="fire-btn">Fire</button>
-        <p class="hint">Tap a square in another team's waters, then fire.</p>
+        <p class="hint" id="weapon-help"></p>
       </div>`;
     updateFireBox(g, teamId);
   }
@@ -297,24 +361,61 @@ function renderTab(g, teamId) {
 
 function updateFireBox(g, teamId) {
   const team = g.teams[teamId];
+  const pu = team.powerups || {};
   const cell = $("target-cell"), btn = $("fire-btn");
   if (!cell) return;
+  const w = battle.weapon;
+  $("weapons").innerHTML = [
+    ["shot", "Shot", team.ammo],
+    ["sonar", "Sonar", pu.sonar || 0],
+    ["airstrike", "Airstrike", pu.airstrike || 0],
+  ].map(([id, label, n]) => `<button role="radio" class="weapon" data-weapon="${id}" aria-checked="${w === id}" ${n > 0 ? "" : "disabled"}>
+      ${label} <span>${n}</span></button>`).join("");
   cell.textContent = state.target ? cellName(...state.target) : "None";
-  btn.disabled = !(state.target && team.ammo > 0 && !state.busy);
+  btn.textContent = w === "shot" ? "Fire" : POWERUPS[w].verb;
+  const have = w === "shot" ? team.ammo > 0 : (pu[w] || 0) > 0;
+  btn.disabled = !(state.target && have && !state.busy);
+  $("weapon-help").textContent = w === "shot"
+    ? `Tap a square in another team's waters, then fire. Get 3 questions right in a row to earn a power-up.`
+    : POWERUPS[w].help;
 }
 
 async function onPanelClick(e, teamId) {
   const g = state.game;
   const tabBtn = e.target.closest("[data-tab]");
   if (tabBtn) { battle.tab = tabBtn.dataset.tab; renderTab(g, teamId); render(); return; }
+  const weaponBtn = e.target.closest("[data-weapon]");
+  if (weaponBtn) {
+    battle.weapon = weaponBtn.dataset.weapon;
+    // a plain shot can't go at a square that's already been hit
+    if (battle.weapon === "shot" && state.target && ((g.shots && g.shots[cellKey(...state.target)]) || zoneOwner(...state.target, g.settings.teamCount) === teamId)) state.target = null;
+    render(); return;
+  }
   const act = e.target.closest("[data-action]")?.dataset.action;
   if (!act) return;
 
+
   if (act === "fire" && state.target) {
     state.busy = true; updateFireBox(g, teamId);
-    try { announce(await fire(state.code, g, teamId, ...state.target, state.uid)); }
-    catch (err) { toast(err.message); }
-    state.target = null; state.busy = false; render();
+    try {
+      if (battle.weapon === "shot") {
+        sfx.fire();
+        announce(await fire(state.code, g, teamId, ...state.target, state.uid));
+      } else if (battle.weapon === "sonar") {
+        sfx.sonar();
+        const res = await useSonar(state.code, g, teamId, ...state.target);
+        toast(res.found ? `Sonar contact! ${res.found} square${res.found === 1 ? "" : "s"} near ${res.cell} hide a ship.` : `Sonar around ${res.cell}: clear water.`, res.found ? "big" : "");
+      } else {
+        sfx.fire();
+        const results = await useAirstrike(state.code, teamId, ...state.target, state.uid);
+        const hits = results.filter((r) => r.hit);
+        const sunk = results.find((r) => r.eliminated) || results.find((r) => r.sunk);
+        if (sunk) announce(sunk);
+        else if (hits.length) { toast(`Airstrike: ${hits.length} hit${hits.length === 1 ? "" : "s"}!`, "big"); sfx.hit(); }
+        else { toast("Airstrike: all misses."); sfx.miss(); }
+      }
+    } catch (err) { toast(err.message); }
+    state.target = null; state.busy = false; battle.weapon = "shot"; render();
   }
   if (act === "next-q") nextQuestion();
   if (act === "answer") await answerQuestion(g, teamId, +e.target.closest("[data-opt]").dataset.opt);
@@ -330,10 +431,10 @@ async function onPanelSubmit(e, teamId) {
 }
 
 function announce(res) {
-  if (!res.hit) toast(`Miss at ${res.cell}.`);
-  else if (res.eliminated) toast(`Hit! You finished off ${res.eliminated}!`, "big");
-  else if (res.sunk) toast(`Hit! You sank a ${res.sunk.toLowerCase()}!`, "big");
-  else toast(`Hit at ${res.cell}!`, "big");
+  if (!res.hit) { toast(`Miss at ${res.cell}.`); sfx.miss(); }
+  else if (res.eliminated) { toast(`Hit! You finished off ${res.eliminated}!`, "big"); sfx.sink(); }
+  else if (res.sunk) { toast(`Hit! You sank a ${res.sunk.toLowerCase()}!`, "big"); sfx.sink(); }
+  else { toast(`Hit at ${res.cell}!`, "big"); sfx.hit(); }
 }
 
 // ---------------- Earn shots (quiz) ----------------
@@ -391,12 +492,18 @@ async function answerQuestion(g, teamId, opt) {
   if (correct) {
     Q.note = "";
     renderQuiz(g);
-    const added = await recordAnswer(state.code, g, teamId, state.uid, true, REWARD[Q.q.level]);
+    sfx.correct();
+    const { added, powerup } = await recordAnswer(state.code, g, teamId, state.uid, true, REWARD[Q.q.level]);
     Q.note = added ? `Correct! +${added} shot${added === 1 ? "" : "s"} for your crew.` : "Correct, but your crew's shots are full. Fire some first!";
-    if (added) toast(`+${added} shot${added === 1 ? "" : "s"}!`, "big");
+    if (powerup) {
+      Q.note += ` Three in a row: your crew earned a${powerup === "airstrike" ? "n" : ""} ${POWERUPS[powerup].name.toLowerCase()}!`;
+      toast(`Power-up: ${POWERUPS[powerup].name}!`, "big");
+      sfx.power();
+    } else if (added) toast(`+${added} shot${added === 1 ? "" : "s"}!`, "big");
   } else {
     Q.lockUntil = Date.now() + 10000;
     Q.note = "Not this time. Read the explanation, then try another.";
+    sfx.wrong();
     recordAnswer(state.code, g, teamId, state.uid, false, 0);
   }
   if (battle.tab === "quiz") renderQuiz(g);
@@ -467,10 +574,12 @@ async function submitTorpedo(teamId) {
   T.readyAt = Date.now() + (state.game.settings.torpedoSecs || 30) * 1000;
   if (guess !== T.snippet.answer) {
     T.result = { ok: false, text: `The code outputs ${T.snippet.answer}, not ${guess}. The torpedo missed its mark.` };
+    sfx.wrong();
     renderTorpedo(state.game);
     return;
   }
   try {
+    sfx.fire();
     const res = await fire(state.code, state.game, teamId, ...T.cell, state.uid, { free: true, via: "torpedo" });
     announce(res);
     T.result = { ok: true, text: `Correct, it's ${T.snippet.answer}! Torpedo away: ${res.hit ? "it's a hit!" : "a miss this time."}` };
