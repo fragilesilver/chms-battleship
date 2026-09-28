@@ -164,6 +164,8 @@ function exprFrom(toks, start, line, stopKw) {
 export function parse(source) {
   const lines = [];
   source.replace(/\r/g, "").split("\n").forEach((text, i) => {
+    // DECLARE X : INTEGER is skipped, so don't trip over the ":" or ARRAY[...]
+    if (/^\s*DECLARE\b/i.test(text)) { lines.push({ toks: [{ t: "kw", v: "DECLARE" }], line: i + 1 }); return; }
     const toks = tokenize(text, i + 1);
     if (toks.length) lines.push({ toks, line: i + 1 });
   });
