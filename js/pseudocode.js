@@ -357,12 +357,23 @@ export function run(source, { cols = 24, rows = 16, maxSteps = 5000, maxFires = 
         switch (n.name) {
           case "DIV": need(2); if (args[1] === 0) throw new PseudoError("You can't divide by zero.", line); return Math.trunc(num(args[0], line, "DIV") / num(args[1], line, "DIV"));
           case "MOD": need(2); if (args[1] === 0) throw new PseudoError("You can't divide by zero.", line); return num(args[0], line, "MOD") % num(args[1], line, "MOD");
-          case "ROUND": need(2); return Number(num(args[0], line, "ROUND").toFixed(args[1]));
+          case "ROUND": {
+            if (args.length !== 1 && args.length !== 2) throw new PseudoError("ROUND needs 1 or 2 values in its brackets, like ROUND(X, 2).", line);
+            const places = args.length === 2 ? num(args[1], line, "ROUND") : 0;
+            if (!Number.isInteger(places) || places < 0 || places > 10) throw new PseudoError("ROUND's number of decimal places must be a whole number from 0 to 10.", line);
+            return Number(num(args[0], line, "ROUND").toFixed(places));
+          }
           case "INT": need(1); return Math.trunc(num(args[0], line, "INT"));
           case "LENGTH": need(1); return String(args[0]).length;
           case "UCASE": need(1); return String(args[0]).toUpperCase();
           case "LCASE": need(1); return String(args[0]).toLowerCase();
-          case "SUBSTRING": need(3); return String(args[0]).substr(args[1] - 1, args[2]);
+          case "SUBSTRING": {
+            need(3);
+            const start = num(args[1], line, "SUBSTRING"), len = num(args[2], line, "SUBSTRING");
+            if (!Number.isInteger(start) || start < 1) throw new PseudoError("SUBSTRING's start position must be a whole number from 1. The first character is 1.", line);
+            if (!Number.isInteger(len) || len < 0) throw new PseudoError("SUBSTRING's length must be a whole number, 0 or more.", line);
+            return String(args[0]).slice(start - 1, start - 1 + len);
+          }
           case "RANDOM": need(0); return Math.random();
         }
         throw new PseudoError(`${n.name}() isn't a function I know.`, line);

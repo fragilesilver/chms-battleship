@@ -72,7 +72,7 @@ function renderLobby(g) {
   $("lj-code").textContent = state.code;
   if (state.qrFor !== state.code && window.QRCode) {
     $("qr").innerHTML = "";
-    new window.QRCode($("qr"), { text: baseUrl, width: 220, height: 220, colorDark: "#14324a", colorLight: "#f7fafb" });
+    new window.QRCode($("qr"), { text: `${baseUrl}?code=${state.code}`, width: 220, height: 220, colorDark: "#14324a", colorLight: "#f7fafb" });
     state.qrFor = state.code;
   }
 

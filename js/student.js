@@ -40,7 +40,10 @@ setInterval(() => {
   const el = document.querySelector(".storm-line");
   if (el && state.game) el.outerHTML = stormLine(state.game) || "<div class=\"storm-line\"></div>";
 }, 1000);
-$("join-code").value = store.get("bs_code") || "";
+// the projector's QR code links to ?code=XXXX: fill it in, then tidy the address bar
+const linkCode = (new URLSearchParams(location.search).get("code") || "").trim().toUpperCase().slice(0, 4);
+if (linkCode) history.replaceState(null, "", location.pathname);
+$("join-code").value = linkCode || store.get("bs_code") || "";
 $("join-name").value = store.get("bs_name") || "";
 state.avatar = avatarOf(store.get("bs_avatar")) || AVATARS[Math.floor(Math.random() * AVATARS.length)];
 drawAvatarPicker($("avatar-picker"));
@@ -63,7 +66,8 @@ function drawAvatarPicker(el) {
 ensureSignedIn().then((user) => {
   state.uid = user.uid;
   const code = store.get("bs_code");
-  if (code && store.get("bs_name")) tryJoin(code, store.get("bs_name"), true);
+  // rejoin after a refresh, but not if a QR link brought them to a different game
+  if (code && store.get("bs_name") && (!linkCode || linkCode === code)) tryJoin(code, store.get("bs_name"), true);
 }).catch(() => showMsg("Couldn't connect. Check the internet connection and reload."));
 
 $("join-form").addEventListener("submit", (e) => {
