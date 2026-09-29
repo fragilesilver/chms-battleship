@@ -16,6 +16,7 @@ import {
  *   onCell       function(r, c) called on click
  *   intel        { cellKey: true/false } sonar results for this team
  *   area         [[r,c]...] squares a power-up will cover
+ *   suggest      { cellKey: votes } targets the crew has suggested
  */
 export function renderOcean(el, game, opts = {}) {
   const n = game.settings;
@@ -48,6 +49,7 @@ export function renderOcean(el, game, opts = {}) {
   const previewSet = new Set((opts.preview?.cells || []).map(([r, c]) => cellKey(r, c)));
   const areaSet = new Set((opts.area || []).map(([r, c]) => cellKey(r, c)));
   const intel = opts.intel || {};
+  const suggest = opts.suggest || {};
 
   let html = `<div class="ocean" style="--cols:${cols};--rows:${rows}" role="grid" aria-label="Ocean chart">`;
   html += `<div class="axis corner"></div>`;
@@ -74,14 +76,17 @@ export function renderOcean(el, game, opts = {}) {
       if (shot) cls.push(shot.hit ? "hit" : "miss");
       else if (key in intel && !ship) cls.push(intel[key] ? "intel-ship" : "intel-clear");
       if (areaSet.has(key)) cls.push("area");
+      if (suggest[key] && !shot) cls.push("suggested");
       if (previewSet.has(key)) cls.push(opts.preview.ok ? "ghost" : "ghost bad");
       if (opts.selected && opts.selected[0] === r && opts.selected[1] === c) cls.push("target");
 
       const label = colLabel(c) + (r + 1) + (shot ? (shot.hit ? ", hit" : ", miss") : "") +
-        (ship && !shot ? ", ship" : "") + (!shot && intel[key] ? ", sonar contact" : "");
+        (ship && !shot ? ", ship" : "") + (!shot && intel[key] ? ", sonar contact" : "") +
+        (suggest[key] && !shot ? `, suggested by ${suggest[key]}` : "");
       html += `<button class="${cls.join(" ")}" data-r="${r}" data-c="${c}"` +
         (team ? ` style="--tc:${team.color}"` : "") +
-        ` aria-label="${label}">${ship && ship.icon ? `<span class="ship-icon" aria-hidden="true">${ship.icon}</span>` : ""}</button>`;
+        ` aria-label="${label}">${ship && ship.icon ? `<span class="ship-icon" aria-hidden="true">${ship.icon}</span>` : ""}` +
+        `${suggest[key] && !shot ? `<span class="sug" aria-hidden="true">${suggest[key]}</span>` : ""}</button>`;
     }
   }
   html += `</div>`;

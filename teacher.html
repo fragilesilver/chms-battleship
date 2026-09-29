@@ -37,6 +37,18 @@
           </label>
         </fieldset>
         <fieldset>
+          <legend>Crew roles</legend>
+          <label class="check"><input type="checkbox" id="roles-on"> Give every crew roles. A random captain places the fleet and hands out jobs: gunner (fires), navigator (earns sonar), scientist (earns airstrikes) and crew (earn shots)</label>
+          <div class="two-col" id="role-times">
+            <label>Navigator earns a sonar at most every (seconds)
+              <input id="nav-secs" type="number" min="5" max="600" value="15">
+            </label>
+            <label>Scientist earns an airstrike at most every (seconds)
+              <input id="sci-secs" type="number" min="10" max="900" value="90">
+            </label>
+          </div>
+        </fieldset>
+        <fieldset>
           <legend>Map and fleet</legend>
           <label>Each team's home waters
             <select id="zone-size"></select>

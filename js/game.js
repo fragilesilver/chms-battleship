@@ -247,3 +247,63 @@ export function torpedoTargets(game, teamId) {
   }
   return out;
 }
+
+// ---------------- crew roles (optional, set by the teacher) ----------------
+// The captain places the fleet and hands out jobs. Any job nobody has
+// falls to the captain, so a small crew still has every job covered.
+export const ROLES = {
+  captain:   { name: "Captain",   icon: "👑", job: "Places the fleet and hands out the jobs. Covers any job nobody else has." },
+  gunner:    { name: "Gunner",    icon: "🎯", job: "Fires the crew's shots, and runs FIRE code. Aim at the targets your crew suggests." },
+  navigator: { name: "Navigator", icon: "🧭", job: "Answers questions to earn sonar, and pings it." },
+  scientist: { name: "Scientist", icon: "🧪", job: "Answers questions to earn airstrikes, and calls them in." },
+  crew:      { name: "Crew",      icon: "⚓", job: "Answers questions to earn shots, and suggests targets to the gunner." },
+};
+export const JOBS = ["gunner", "navigator", "scientist", "crew"];   // what the captain can hand out
+export const KEY_JOBS = ["gunner", "navigator", "scientist"];       // one person each
+export const DEFAULT_NAV_SECS = 15;
+export const DEFAULT_SCI_SECS = 90;
+
+export const rolesOn = (g) => !!(g.settings && g.settings.roles);
+export const crewOf = (g, teamId) =>
+  Object.entries(g.players || {}).filter(([, p]) => p.team === teamId).map(([uid]) => uid);
+export const roleOf = (g, uid) => (g.players && g.players[uid] && JOBS.includes(g.players[uid].role) ? g.players[uid].role : "crew");
+export const captainOf = (g, teamId) => {
+  const cap = g.teams[teamId] && g.teams[teamId].captain;
+  return cap && g.players && g.players[cap] && g.players[cap].team === teamId ? cap : null;
+};
+
+// Who does this key job on the crew? The member given it, otherwise the captain.
+// (If there's no captain yet, the first member in a fixed order, so the crew is never stuck.)
+export function jobHolder(g, teamId, job) {
+  const members = crewOf(g, teamId);
+  const uid = members.find((u) => roleOf(g, u) === job);
+  return uid || captainOf(g, teamId) || members.sort()[0] || null;
+}
+
+// Every job this player does (a captain may cover several)
+export function jobsOf(g, teamId, uid) {
+  if (!rolesOn(g)) return ["captain", ...KEY_JOBS, "crew"];
+  const out = [];
+  if (captainOf(g, teamId) === uid) out.push("captain");
+  for (const j of KEY_JOBS) if (jobHolder(g, teamId, j) === uid) out.push(j);
+  if (roleOf(g, uid) === "crew") out.push("crew");
+  return out;
+}
+
+// What a correct answer earns this player: "shots", "sonar" or "airstrike"
+export function earnKind(g, uid) {
+  if (!rolesOn(g)) return "shots";
+  const r = roleOf(g, uid);
+  return r === "navigator" ? "sonar" : r === "scientist" ? "airstrike" : "shots";
+}
+
+// Give every member without a job one: unfilled key jobs first, then crew
+export function fillJobs(g, teamId) {
+  const members = crewOf(g, teamId);
+  const taken = new Set(members.map((u) => g.players[u].role).filter((r) => KEY_JOBS.includes(r)));
+  const open = KEY_JOBS.filter((j) => !taken.has(j));
+  const updates = {};
+  const jobless = members.filter((u) => !JOBS.includes(g.players[u].role));
+  for (const u of jobless.sort(() => Math.random() - 0.5)) updates[u] = open.shift() || "crew";
+  return updates;   // { uid: role }
+}

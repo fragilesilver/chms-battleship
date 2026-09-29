@@ -11,6 +11,7 @@ import {
   findShipAt, isSunk, shipsAfloat, randomFleet, zoneFor, teamIndex, fleetComplete,
   maxStorm, airstrikeCells, sonarCells, STREAK_FOR_POWERUP, POWERUPS,
   ZONE, DEFAULT_FLEET, avatarOf, shipName, crewBlock,
+  rolesOn, crewOf, captainOf, roleOf, fillJobs, earnKind, KEY_JOBS, JOBS, DEFAULT_NAV_SECS, DEFAULT_SCI_SECS,
 } from "./game.js";
 
 const firebaseConfig = {
@@ -57,7 +58,7 @@ export async function gameExists(code) {
 export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
 export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
 
-export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams }) {
+export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams, roles, navSecs, sciSecs }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -82,6 +83,7 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, 
       stormMins: stormMins || 0,
       zoneSize: zoneSize || ZONE, fleet: fleet || DEFAULT_FLEET,
       crewMax: crewMax || 0, evenTeams: evenTeams !== false,
+      roles: !!roles, navSecs: navSecs || DEFAULT_NAV_SECS, sciSecs: sciSecs || DEFAULT_SCI_SECS,
     },
     storm: 0,
     teams,
@@ -156,8 +158,48 @@ export async function chooseTeam(code, game, uid, teamId) {
 
 export async function leaveTeam(code, game, uid) {
   if (game.phase !== "lobby" && game.phase !== "placement") throw new Error("You can only change crews before the battle starts.");
-  await update(gameRef(code, `players/${uid}`), { team: null });
+  await update(gameRef(code, `players/${uid}`), { team: null, role: null });
 }
+
+// ---------- crew roles ----------
+// Run by the teacher's tab: every crew with members gets a captain (picked at
+// random), and anyone without a job gets one. Returns true if it changed anything.
+export async function ensureCaptains(code, game) {
+  if (!rolesOn(game) || (game.phase !== "placement" && game.phase !== "battle")) return false;
+  const updates = {};
+  const names = [];
+  for (const id of Object.keys(game.teams)) {
+    const members = crewOf(game, id);
+    if (!members.length) continue;
+    if (!captainOf(game, id)) {
+      const cap = members[Math.floor(Math.random() * members.length)];
+      updates[`teams/${id}/captain`] = cap;
+      names.push(`${game.players[cap].name} is captain of ${game.teams[id].name}`);
+    }
+    for (const [uid, role] of Object.entries(fillJobs(game, id))) updates[`players/${uid}/role`] = role;
+  }
+  if (!Object.keys(updates).length) return false;
+  await update(gameRef(code), updates);
+  if (names.length) await addFeed(code, names.join(". ") + ".", "info");
+  return true;
+}
+
+// Captain gives `uid` a job. If someone else had that key job, they swap.
+export async function setRole(code, game, teamId, uid, role) {
+  if (!JOBS.includes(role)) return;
+  const updates = { [`players/${uid}/role`]: role };
+  if (KEY_JOBS.includes(role)) {
+    const other = crewOf(game, teamId).find((u) => u !== uid && roleOf(game, u) === role);
+    if (other) updates[`players/${other}/role`] = roleOf(game, uid);
+  }
+  await update(gameRef(code), updates);
+}
+
+export const makeCaptain = (code, teamId, uid) => update(gameRef(code, `teams/${teamId}`), { captain: uid });
+
+// Crew members suggest targets to their gunner (up to 5 squares each)
+export const suggestTargets = (code, teamId, uid, cells) =>
+  set(gameRef(code, `teams/${teamId}/suggest/${uid}`), cells.length ? { cells: cells.slice(0, 5), t: Date.now() } : null);
 
 export const saveFleet = (code, teamId, fleetObj) =>
   set(gameRef(code, `fleets/${teamId}`), fleetObj);
@@ -239,6 +281,18 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward) {
   }
   if (game.phase !== "battle") return { added: 0, powerup: null };
 
+  // With crew roles on, navigators earn sonar and scientists earn airstrikes,
+  // at most one every navSecs / sciSecs seconds
+  const kind = earnKind(game, uid);
+  if (kind !== "shots") {
+    const secs = kind === "sonar" ? game.settings.navSecs || DEFAULT_NAV_SECS : game.settings.sciSecs || DEFAULT_SCI_SECS;
+    const now = Date.now();
+    const t = await runTransaction(gameRef(code, `players/${uid}/earnReadyAt`), (at) => ((at || 0) > now ? undefined : now + secs * 1000));
+    if (!t.committed) return { added: 0, powerup: null, readyAt: t.snapshot.val() };
+    await runTransaction(gameRef(code, `teams/${teamId}/powerups/${kind}`), (n) => (n || 0) + 1);
+    return { added: 0, powerup: kind, readyAt: now + secs * 1000 };
+  }
+
   const cap = game.settings.maxAmmo || MAX_AMMO;
   let added = 0;
   await runTransaction(gameRef(code, `teams/${teamId}/ammo`), (a) => {
@@ -248,6 +302,8 @@ export async function recordAnswer(code, game, teamId, uid, correct, reward) {
   });
 
   // every STREAK_FOR_POWERUP correct answers in a row earns the crew a power-up
+  // (not with crew roles: the navigator and scientist earn those)
+  if (rolesOn(game)) return { added, powerup: null };
   const streak = await runTransaction(gameRef(code, `players/${uid}/streak`),
     (n) => ((n || 0) + 1 >= STREAK_FOR_POWERUP ? 0 : (n || 0) + 1));
   let powerup = null;

@@ -4,12 +4,13 @@
 import {
   ensureSignedIn, watchGame, getPhase, joinGame, chooseTeam,
   saveFleet, setReady, fire, recordAnswer, modesOf, useSonar, useAirstrike,
-  setAvatar, crewAvatars, leaveTeam,
+  setAvatar, crewAvatars, leaveTeam, setRole, makeCaptain, suggestTargets,
 } from "./firebase.js";
 import {
   fleetFor, shipName, AVATARS, avatarOf, zoneFor, teamIndex, canPlace, randomFleet, shipCells, fleetComplete,
   cellName, zoneOwner, cellKey, gridSize, colLabel,
   POWERUPS, airstrikeCells, sonarCells, maxStorm, crewBlock, torpedoTargets,
+  ROLES, JOBS, rolesOn, crewOf, captainOf, roleOf, jobsOf, earnKind,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { QUESTIONS, REWARD } from "./questions.js";
@@ -110,11 +111,12 @@ function render() {
   if (!team && g.phase !== "finished") return renderTeamPicker(g);
   if (g.phase === "lobby") return renderWaiting(g, team);
   show("play");
-  if (g.phase !== "battle") {
+  if (g.phase !== "battle" && g.phase !== "placement") {
     const panel = $("panel");
     panel.dataset.key = "";
     panel.onsubmit = null;
     panel.oninput = null;
+    panel.onchange = null;
   }
   if (g.phase === "placement") return renderPlacement(g, me.team);
   if (g.phase === "battle") return renderBattle(g, me.team);
@@ -122,7 +124,7 @@ function render() {
 }
 
 // ---------------- alerts for things other players did ----------------
-const seen = { shots: null, storm: 0, won: false };
+const seen = { shots: null, storm: 0, won: false, jobs: null, suggest: null };
 function watchEvents(g, teamId) {
   const shots = g.shots || {};
   if (seen.shots === null) {
@@ -149,6 +151,26 @@ function watchEvents(g, teamId) {
   if (g.phase === "finished" && !seen.won) {
     seen.won = true;
     if (g.winner) sfx.win();
+  }
+  if (rolesOn(g) && teamId && (g.phase === "placement" || g.phase === "battle")) {
+    // tell players when they get a new job
+    const jobs = captainOf(g, teamId) ? jobsOf(g, teamId, state.uid).join(",") : "";
+    if (jobs && seen.jobs !== null && jobs !== seen.jobs) {
+      const list = jobs.split(",").map((j) => `${ROLES[j].icon} ${ROLES[j].name}`).join(" + ");
+      toast(`Your job: ${list}`, "big");
+    }
+    seen.jobs = jobs;
+    // the gunner hears about new target suggestions
+    const sug = g.teams[teamId].suggest || {};
+    const stamp = Object.entries(sug).map(([u, x]) => u + x.t).join();
+    if (seen.suggest !== null && stamp !== seen.suggest && jobsOf(g, teamId, state.uid).includes("gunner")) {
+      const newest = Object.entries(sug).filter(([u]) => u !== state.uid).sort((a, b) => b[1].t - a[1].t)[0];
+      if (newest && !seen.suggest.includes(newest[0] + newest[1].t)) {
+        const who = g.players[newest[0]];
+        toast(`${who ? avatarOf(who.avatar) + " " + who.name : "Your crew"} suggests ${newest[1].cells.map((c) => cellName(...c)).join(", ")}`);
+      }
+    }
+    seen.suggest = stamp;
   }
 }
 
@@ -178,8 +200,58 @@ function renderWaiting(g, team) {
   show("wait");
   $("wait-title").textContent = `You're aboard with ${team.name}`;
   if (!$("wait-avatar").querySelector(".avatar-opt")) drawAvatarPicker($("wait-avatar"));
+  $("roles-note").hidden = !rolesOn(g);
   $("leave-team").onclick = () => leaveTeam(state.code, state.game, state.uid).catch((err) => toast(err.message));
   renderTeams($("wait-teams"), g, g.players[state.uid].team);
+}
+
+// ---------------- crew roles ----------------
+function crewHtml(g, teamId) {
+  if (!rolesOn(g)) return "";
+  const cap = captainOf(g, teamId);
+  if (!cap) return `<h3>Your crew</h3><p class="hint">A captain is being picked at random…</p>`;
+  const iAmCap = cap === state.uid;
+  const rows = crewOf(g, teamId).map((uid) => {
+    const p = g.players[uid];
+    const name = escapeHtml(p.name);
+    const jobs = jobsOf(g, teamId, uid).map((j) => `<span class="role-badge">${ROLES[j].icon} ${ROLES[j].name}</span>`).join("");
+    const control = iAmCap
+      ? `<select data-role-for="${uid}" aria-label="Job for ${name}">${JOBS.map((j) =>
+          `<option value="${j}" ${j === roleOf(g, uid) ? "selected" : ""}>${ROLES[j].icon} ${ROLES[j].name}</option>`).join("")}</select>
+         ${uid !== state.uid ? `<button class="linkish" data-captain="${uid}">Make captain</button>` : ""}`
+      : "";
+    return `<li class="crew-row ${uid === state.uid ? "me" : ""}">
+      <span class="crew-name">${avatarOf(p.avatar)} ${name}${uid === state.uid ? " (you)" : ""}</span>
+      <span class="crew-jobs">${jobs}</span>${control}</li>`;
+  }).join("");
+  return `<h3>Your crew</h3>
+    ${iAmCap ? `<p class="hint">You're the captain. Give each crew member a job. Any job nobody has is yours.</p>` : ""}
+    <ul class="crew-list">${rows}</ul>
+    <details class="role-help"><summary>What does each job do?</summary><dl>${Object.values(ROLES).map((r) =>
+      `<dt>${r.icon} ${r.name}</dt><dd>${r.job}</dd>`).join("")}</dl></details>`;
+}
+
+// Only touch the crew box when it changes, so the captain's dropdowns stay open
+function drawCrew(g, teamId) {
+  const box = $("crew-box");
+  if (!box) return;
+  const html = crewHtml(g, teamId);
+  if (box.dataset.html !== html) { box.dataset.html = html; box.innerHTML = html; }
+}
+
+async function onCrewChange(e, teamId) {
+  const sel = e.target.closest("[data-role-for]");
+  if (sel) await setRole(state.code, state.game, teamId, sel.dataset.roleFor, sel.value).catch((err) => toast(err.message));
+}
+
+async function onCrewClick(e, teamId) {
+  const b = e.target.closest("[data-captain]");
+  if (!b) return false;
+  const p = state.game.players[b.dataset.captain];
+  if (p && confirm(`Make ${p.name} the captain? They'll take over placing ships and handing out jobs.`)) {
+    await makeCaptain(state.code, teamId, b.dataset.captain);
+  }
+  return true;
 }
 
 // ---------------- placement ----------------
@@ -190,67 +262,99 @@ function currentShip(g, teamId) {
   return { ...proto, dir: p.dir, r: p.hover[0], c: p.hover[1] };
 }
 
+// With crew roles on, only the captain places ships (anyone can if there's no captain yet)
+const placer = (g, teamId) => !rolesOn(g) || !captainOf(g, teamId) || captainOf(g, teamId) === state.uid;
+
 function renderPlacement(g, teamId) {
   const zone = zoneFor(teamIndex(teamId), g.settings);
   const fleet = (g.fleets && g.fleets[teamId]) || {};
   const protos = fleetFor(g.settings);
   if (!protos.some((s) => s.id === state.placing.shipId)) state.placing.shipId = protos[0].id;
   const ready = g.teams[teamId].ready;
-  const cand = !ready && currentShip(g, teamId);
+  const mine = placer(g, teamId);
+  const locked = ready || !mine;
+  const cand = !locked && currentShip(g, teamId);
 
   renderOcean($("ocean"), g, {
     myTeam: teamId,
     activeZone: teamId,
     preview: cand ? { cells: shipCells(cand), ok: canPlace(fleet, cand, zone) } : null,
-    onCell: ready ? null : (r, c) => placeAt(g, teamId, zone, fleet, r, c),
-    onHover: ready ? null : (r, c) => {
+    onCell: locked ? null : (r, c) => placeAt(state.game, teamId, r, c),
+    onHover: locked ? null : (r, c) => {
       const h = state.placing.hover;
-      if (!h || h[0] !== r || h[1] !== c) { state.placing.hover = [r, c]; renderPlacement(g, teamId); }
+      if (!h || h[0] !== r || h[1] !== c) { state.placing.hover = [r, c]; renderPlacement(state.game, teamId); }
     },
   });
 
+  // the panel frame is built once; the parts inside are refreshed
+  const panel = $("panel");
+  const key = `placement:${teamId}`;
+  if (panel.dataset.key !== key) {
+    panel.dataset.key = key;
+    panel.innerHTML = `<div id="place-box"></div><div id="crew-box"></div><h3>Teams</h3><ul class="teams" id="teams"></ul>`;
+    panel.onclick = (e) => onPlacementClick(e, teamId);
+    panel.onchange = (e) => onCrewChange(e, teamId);
+    panel.onsubmit = null;
+    panel.oninput = null;
+  }
+
   const shipsHtml = protos.map((s) => {
     const placed = fleet[s.id];
-    const sel = s.id === state.placing.shipId;
+    const sel = s.id === state.placing.shipId && !locked;
     const icon = placed && avatarOf(placed.icon);
-    return `<li><button class="ship-pick ${sel ? "sel" : ""} ${placed ? "placed" : ""}" data-ship="${s.id}" ${ready ? "disabled" : ""}>
+    return `<li><button class="ship-pick ${sel ? "sel" : ""} ${placed ? "placed" : ""}" data-ship="${s.id}" ${locked ? "disabled" : ""}>
       <span class="ship-bar" style="--len:${s.len}"></span>${s.name}${icon ? ` <span class="ship-av" aria-hidden="true">${icon}</span>` : ""} <small>${s.len} squares${placed ? ", placed" : ""}</small></button></li>`;
   }).join("");
+  const me = g.players[state.uid];
+  const cap = rolesOn(g) && captainOf(g, teamId);
+  const intro = !mine
+    ? `<p class="hint">${ROLES.captain.icon} <strong>${escapeHtml(g.players[cap].name)}</strong> is your captain and places the fleet. Talk to them about where the ships should go!</p>`
+    : `<p class="hint">Your home waters are the bright squares. Pick a ship, then tap where its ${state.placing.dir === "h" ? "left" : "top"} end goes. ${
+      rolesOn(g) ? "Each ship carries a crew member's avatar. " : avatarOf(me.avatar) ? `Ships you place carry your avatar ${avatarOf(me.avatar)}. ` : ""}Your whole crew sees the same fleet.</p>`;
 
-  $("panel").innerHTML = `
+  $("place-box").innerHTML = `
     <h2>Place your fleet</h2>
-    <p class="hint">Your home waters are the bright squares. Pick a ship, then tap where its ${state.placing.dir === "h" ? "left" : "top"} end goes. ${avatarOf(g.players[state.uid].avatar) ? `Ships you place carry your avatar ${avatarOf(g.players[state.uid].avatar)}. ` : ""}Your whole crew sees the same fleet.</p>
+    ${intro}
     <ul class="ship-list">${shipsHtml}</ul>
-    <div class="btn-row">
+    ${mine ? `<div class="btn-row">
       <button class="btn" data-action="rotate" ${ready ? "disabled" : ""}>Rotate (${state.placing.dir === "h" ? "across" : "down"})</button>
       <button class="btn" data-action="random" ${ready ? "disabled" : ""}>Random</button>
     </div>
     <button class="btn primary wide" data-action="ready" ${fleetComplete(fleet, g.settings) ? "" : "disabled"}>
-      ${ready ? "Unlock fleet" : "Lock in fleet"}</button>
+      ${ready ? "Unlock fleet" : "Lock in fleet"}</button>` : ""}
     <p class="hint">${ready ? "Locked in. Waiting for the other teams and your teacher." : fleetComplete(fleet, g.settings) ? "All ships placed. Lock in when your crew agrees." : `Place all ${protos.length} ships to lock in.`}</p>
-    <button class="linkish" data-action="leave-team">Leave ${escapeHtml(g.teams[teamId].name)} and pick another crew</button>
-    <h3>Teams</h3><ul class="teams" id="teams"></ul>`;
+    <button class="linkish" data-action="leave-team">Leave ${escapeHtml(g.teams[teamId].name)} and pick another crew</button>`;
+  drawCrew(g, teamId);
   renderTeams($("teams"), g, teamId);
-
-  $("panel").onclick = async (e) => {
-    const shipBtn = e.target.closest("[data-ship]");
-    if (shipBtn) { state.placing.shipId = shipBtn.dataset.ship; return renderPlacement(g, teamId); }
-    const act = e.target.closest("[data-action]")?.dataset.action;
-    if (act === "rotate") { state.placing.dir = state.placing.dir === "h" ? "v" : "h"; renderPlacement(g, teamId); }
-    if (act === "random") {
-      // share the ships out between the crew's avatars, starting with yours
-      const mine = avatarOf(g.players[state.uid].avatar);
-      const icons = [...new Set([mine, ...crewAvatars(g, teamId)].filter(Boolean))];
-      const next = randomFleet(zone, g.settings, icons);
-      if (next) await saveFleet(state.code, teamId, next);
-      else toast("Couldn't fit the fleet. Try again.");
-    }
-    if (act === "ready") await setReady(state.code, teamId, !ready);
-    if (act === "leave-team") await leaveTeam(state.code, g, state.uid).catch((err) => toast(err.message));
-  };
 }
 
-async function placeAt(g, teamId, zone, fleet, r, c) {
+// Which avatars go on the ships: yours, or the whole crew's in turn when roles are on
+function shipIcons(g, teamId) {
+  const mine = avatarOf(g.players[state.uid].avatar);
+  return [...new Set([mine, ...crewAvatars(g, teamId)].filter(Boolean))];
+}
+
+async function onPlacementClick(e, teamId) {
+  const g = state.game;
+  if (await onCrewClick(e, teamId)) return;
+  const zone = zoneFor(teamIndex(teamId), g.settings);
+  const shipBtn = e.target.closest("[data-ship]");
+  if (shipBtn) { state.placing.shipId = shipBtn.dataset.ship; return renderPlacement(g, teamId); }
+  const act = e.target.closest("[data-action]")?.dataset.action;
+  if (act === "rotate") { state.placing.dir = state.placing.dir === "h" ? "v" : "h"; renderPlacement(g, teamId); }
+  if (act === "random") {
+    // share the ships out between the crew's avatars, starting with yours
+    const next = randomFleet(zone, g.settings, shipIcons(g, teamId));
+    if (next) await saveFleet(state.code, teamId, next);
+    else toast("Couldn't fit the fleet. Try again.");
+  }
+  if (act === "ready") await setReady(state.code, teamId, !g.teams[teamId].ready);
+  if (act === "leave-team") await leaveTeam(state.code, g, state.uid).catch((err) => toast(err.message));
+}
+
+async function placeAt(g, teamId, r, c) {
+  const zone = zoneFor(teamIndex(teamId), g.settings);
+  const fleet = (g.fleets && g.fleets[teamId]) || {};
   // tapping one of your ships picks it up for moving
   const onShip = Object.values(fleet).find((s) => shipCells(s).some(([a, b]) => a === r && b === c));
   if (onShip && onShip.id !== state.placing.shipId) {
@@ -261,8 +365,9 @@ async function placeAt(g, teamId, zone, fleet, r, c) {
   const protos = fleetFor(g.settings);
   const proto = protos.find((s) => s.id === state.placing.shipId);
   const ship = { ...proto, dir: state.placing.dir, r, c };
-  const icon = avatarOf(g.players[state.uid].avatar);
-  if (icon) ship.icon = icon;
+  // with roles on, the captain places every ship, so each carries a different crew member's avatar
+  const icons = rolesOn(g) ? crewAvatars(g, teamId) : [avatarOf(g.players[state.uid].avatar)].filter(Boolean);
+  if (icons.length) ship.icon = icons[protos.indexOf(proto) % icons.length];
   if (!canPlace(fleet, ship, zone)) return toast("That ship doesn't fit there.");
   const next = protos.find((s) => !fleet[s.id] && s.id !== ship.id);
   if (next) state.placing.shipId = next.id;
@@ -292,17 +397,45 @@ const battle = {
 };
 const seenQuestions = new Set();
 
+const EARN_LABEL = { shots: "Earn shots", sonar: "Earn sonar", airstrike: "Earn airstrikes" };
+
+// Weapons this player may use. With roles on: gunner fires, navigator sonar, scientist airstrike.
+function myWeapons(g, teamId) {
+  const jobs = jobsOf(g, teamId, state.uid);
+  return ["shot", "sonar", "airstrike"].filter((w) => jobs.includes({ shot: "gunner", sonar: "navigator", airstrike: "scientist" }[w]));
+}
+
+// Suggested targets still worth firing at: { cellKey: [uid, ...] }
+function liveSuggestions(g, teamId) {
+  const out = {};
+  if (!rolesOn(g)) return out;
+  const members = new Set(crewOf(g, teamId));
+  for (const [uid, sg] of Object.entries(g.teams[teamId].suggest || {})) {
+    if (!members.has(uid)) continue;
+    for (const [r, c] of sg.cells || []) {
+      const k = cellKey(r, c);
+      if (g.shots && g.shots[k]) continue;
+      (out[k] = out[k] || []).push(uid);
+    }
+  }
+  return out;
+}
+
 function renderBattle(g, teamId) {
   const team = g.teams[teamId];
   const modes = modesOf(g);
-  const tabs = TABS.filter((t) => !t.mode || modes[t.mode]);
+  const kind = earnKind(g, state.uid);
+  const tabs = TABS.filter((t) => !t.mode || modes[t.mode]).map((t) => (t.id === "quiz" ? { ...t, label: EARN_LABEL[kind] } : t));
   if (!tabs.some((t) => t.id === battle.tab)) battle.tab = "fire";
 
   const t = state.target;
   if (t && g.shots && g.shots[cellKey(t[0], t[1])]) state.target = null;
 
   const pu = team.powerups || {};
-  if (battle.weapon !== "shot" && !(pu[battle.weapon] > 0)) battle.weapon = "shot";
+  const weapons = myWeapons(g, teamId);
+  if (!weapons.includes(battle.weapon) || (battle.weapon !== "shot" && !(pu[battle.weapon] > 0))) {
+    battle.weapon = weapons.find((w) => (w === "shot" ? true : pu[w] > 0)) || weapons[0] || null;
+  }
   let area = null;
   if (battle.tab === "fire" && state.target && battle.weapon === "sonar") area = sonarCells(...state.target, g.settings);
   if (battle.tab === "fire" && state.target && battle.weapon === "airstrike") area = airstrikeCells(...state.target, g.settings);
@@ -313,9 +446,10 @@ function renderBattle(g, teamId) {
     onCell: team.alive ? (r, c) => onChartTap(g, teamId, r, c) : null,
     intel: team.intel,
     area,
+    suggest: Object.fromEntries(Object.entries(liveSuggestions(g, teamId)).map(([k, v]) => [k, v.length])),
   });
 
-  const key = `battle:${teamId}:${team.alive}:${tabs.map((x) => x.id).join(",")}`;
+  const key = `battle:${teamId}:${team.alive}:${tabs.map((x) => x.id + x.label).join(",")}:${jobsOf(g, teamId, state.uid).join()}`;
   const panel = $("panel");
   if (panel.dataset.key !== key) {
     panel.dataset.key = key;
@@ -324,6 +458,7 @@ function renderBattle(g, teamId) {
       <div class="tabs" role="tablist">${tabs.map((x) =>
         `<button role="tab" class="tab" data-tab="${x.id}">${x.label}</button>`).join("")}</div>
       <div class="tab-body" id="tab-body"></div>
+      <div id="crew-box"></div>
       <h3>Teams</h3><ul class="teams" id="teams"></ul>
       <h3>Battle log</h3><ol class="feed" id="feed"></ol>`
       : `<div class="sunk-note"><h2>Your fleet is sunk</h2><p>Keep watching. The chart updates live until one team is left.</p></div>
@@ -332,6 +467,7 @@ function renderBattle(g, teamId) {
     panel.onclick = (e) => onPanelClick(e, teamId);
     panel.onsubmit = (e) => onPanelSubmit(e, teamId);
     panel.oninput = (e) => { if (e.target.id === "code-input") battle.code.text = e.target.value; };
+    panel.onchange = (e) => onCrewChange(e, teamId);
     if (team.alive) renderTab(g, teamId);
   }
 
@@ -341,10 +477,12 @@ function renderBattle(g, teamId) {
       <span class="ammo-n">${team.ammo}</span><span class="ammo-l">shot${team.ammo === 1 ? "" : "s"} for your crew</span>
       <div class="shells">${Array.from({ length: max }, (_, i) => `<span class="shell ${i < team.ammo ? "full" : ""}"></span>`).join("")}</div>
       <div class="pu-count">${pu.sonar || 0} sonar, ${pu.airstrike || 0} airstrike${pu.airstrike === 1 ? "" : "s"}</div>
+      ${rolesOn(g) ? `<div class="my-role">${jobsOf(g, teamId, state.uid).map((j) => `${ROLES[j].icon} ${ROLES[j].name}`).join(" + ") || ROLES.crew.icon + " Crew"}</div>` : ""}
       ${stormLine(g)}`;
     panel.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === battle.tab));
     if (battle.tab === "fire") updateFireBox(g, teamId);
   }
+  if (team.alive) drawCrew(g, teamId);
   renderTeams($("teams"), g, teamId);
   renderFeed($("feed"), g);
 }
@@ -397,7 +535,9 @@ function renderTab(g, teamId) {
         <span class="target-label">Target</span>
         <span class="target-cell" id="target-cell"></span>
         <button class="btn fire wide" data-action="fire" id="fire-btn">Fire</button>
+        <button class="btn wide" data-action="suggest" id="suggest-btn" hidden>Suggest to the gunner</button>
         <p class="hint" id="weapon-help"></p>
+        <div id="suggest-box"></div>
       </div>`;
     updateFireBox(g, teamId);
   }
@@ -413,23 +553,59 @@ function updateFireBox(g, teamId) {
   const cell = $("target-cell"), btn = $("fire-btn");
   if (!cell) return;
   const w = battle.weapon;
+  const allowed = myWeapons(g, teamId);
   $("weapons").innerHTML = [
     ["shot", "Shot", team.ammo],
     ["sonar", "Sonar", pu.sonar || 0],
     ["airstrike", "Airstrike", pu.airstrike || 0],
-  ].map(([id, label, n]) => `<button role="radio" class="weapon" data-weapon="${id}" aria-checked="${w === id}" ${n > 0 ? "" : "disabled"}>
+  ].filter(([id]) => allowed.includes(id))
+    .map(([id, label, n]) => `<button role="radio" class="weapon" data-weapon="${id}" aria-checked="${w === id}" ${n > 0 ? "" : "disabled"}>
       ${label} <span>${n}</span></button>`).join("");
   cell.textContent = state.target ? cellName(...state.target) : "None";
-  btn.textContent = w === "shot" ? "Fire" : POWERUPS[w].verb;
-  const have = w === "shot" ? team.ammo > 0 : (pu[w] || 0) > 0;
-  btn.disabled = !(state.target && have && !state.busy);
-  $("weapon-help").textContent = w === "shot"
-    ? `Tap a square in another team's waters, then fire. Get 3 questions right in a row to earn a power-up.`
-    : POWERUPS[w].help;
+  btn.hidden = !w;
+  if (w) {
+    btn.textContent = w === "shot" ? "Fire" : POWERUPS[w].verb;
+    const have = w === "shot" ? team.ammo > 0 : (pu[w] || 0) > 0;
+    btn.disabled = !(state.target && have && !state.busy);
+  }
+  // anyone who isn't the gunner can suggest a target
+  const roles = rolesOn(g);
+  const gunner = !roles || allowed.includes("shot");
+  const sBtn = $("suggest-btn");
+  sBtn.hidden = gunner;
+  sBtn.className = w ? "btn wide" : "btn primary wide";
+  sBtn.disabled = !state.target;
+  $("weapon-help").textContent = !roles
+    ? (w === "shot" ? "Tap a square in another team's waters, then fire. Get 3 questions right in a row to earn a power-up." : POWERUPS[w].help)
+    : w === "shot" ? "You're the gunner. Tap a square, or pick one your crew suggested below, then fire."
+    : w ? POWERUPS[w].help + " Or suggest the square to your gunner."
+    : "Tap a square in enemy waters and suggest it to your gunner. Only the gunner can fire shots.";
+
+  // the crew's suggestions, most votes first
+  const box = $("suggest-box");
+  if (!roles) { box.innerHTML = ""; return; }
+  const sug = Object.entries(liveSuggestions(g, teamId)).sort((a, b) => b[1].length - a[1].length);
+  box.innerHTML = sug.length
+    ? `<h4>Crew suggestions</h4><div class="sug-list">${sug.map(([k, uids]) => {
+        const [r, c] = k.split("_").map(Number);
+        const who = uids.map((u) => avatarOf(g.players[u].avatar) || "⚓").join("");
+        return `<button class="sug-pick ${state.target && cellKey(...state.target) === k ? "sel" : ""}" data-pick="${k}" title="${uids.map((u) => escapeHtml(g.players[u].name)).join(", ")}">
+          <strong>${cellName(r, c)}</strong> <span>${who}</span></button>`;
+      }).join("")}</div>
+      ${g.teams[teamId].suggest && g.teams[teamId].suggest[state.uid] ? `<button class="linkish" data-action="unsuggest">Clear my suggestions</button>` : ""}`
+    : `<p class="hint">No targets suggested yet.</p>`;
 }
 
 async function onPanelClick(e, teamId) {
   const g = state.game;
+  if (await onCrewClick(e, teamId)) return;
+  const pickBtn = e.target.closest("[data-pick]");
+  if (pickBtn) {
+    const [r, c] = pickBtn.dataset.pick.split("_").map(Number);
+    state.target = [r, c];
+    if (myWeapons(g, teamId).includes("shot")) battle.weapon = "shot";
+    render(); return;
+  }
   const tabBtn = e.target.closest("[data-tab]");
   if (tabBtn) { battle.tab = tabBtn.dataset.tab; renderTab(g, teamId); render(); return; }
   const weaponBtn = e.target.closest("[data-weapon]");
@@ -443,7 +619,15 @@ async function onPanelClick(e, teamId) {
   if (!act) return;
 
 
-  if (act === "fire" && state.target) {
+  if (act === "suggest" && state.target) {
+    const cells = [state.target, ...((g.teams[teamId].suggest || {})[state.uid]?.cells || [])
+      .filter(([r, c]) => r !== state.target[0] || c !== state.target[1])];
+    await suggestTargets(state.code, teamId, state.uid, cells);
+    toast(`Suggested ${cellName(...state.target)} to your gunner.`);
+    state.target = null; render(); return;
+  }
+  if (act === "unsuggest") { await suggestTargets(state.code, teamId, state.uid, []); return; }
+  if (act === "fire" && state.target && battle.weapon) {
     state.busy = true; updateFireBox(g, teamId);
     try {
       if (battle.weapon === "shot") {
@@ -463,7 +647,7 @@ async function onPanelClick(e, teamId) {
         else { toast("Airstrike: all misses."); sfx.miss(); }
       }
     } catch (err) { toast(err.message); }
-    state.target = null; state.busy = false; battle.weapon = "shot"; render();
+    state.target = null; state.busy = false; battle.weapon = myWeapons(g, teamId)[0] || null; render();
   }
   if (act === "next-q") nextQuestion();
   if (act === "answer") await answerQuestion(g, teamId, +e.target.closest("[data-opt]").dataset.opt);
@@ -509,10 +693,14 @@ function renderQuiz(g) {
   const locked = Date.now() < Q.lockUntil;
   const reward = REWARD[Q.q.level];
   const done = Q.picked !== null;
+  const kind = earnKind(g, state.uid);
+  const level = Q.q.level === "easy" ? "Easy" : Q.q.level === "medium" ? "Medium" : "Hard";
+  const worth = kind === "shots" ? `worth ${reward} shot${reward === 1 ? "" : "s"}`
+    : `right answer earns 1 ${kind === "sonar" ? "sonar" : "airstrike"}`;
 
   body.innerHTML = `
     <div class="quiz">
-      <p class="q-level">${Q.q.level === "easy" ? "Easy" : Q.q.level === "medium" ? "Medium" : "Hard"}, worth ${reward} shot${reward === 1 ? "" : "s"}</p>
+      <p class="q-level">${level}, ${worth}</p>
       ${Q.q.code ? `<pre class="code-view">${escapeHtml(Q.q.code.join("\n"))}</pre>` : ""}
       <p class="q-text">${escapeHtml(Q.q.q)}</p>
       <div class="options">${Q.order.map((i) => {
@@ -547,13 +735,22 @@ async function answerQuestion(g, teamId, opt) {
     Q.note = "";
     renderQuiz(g);
     sfx.correct();
-    const { added, powerup } = await recordAnswer(state.code, g, teamId, state.uid, true, REWARD[Q.q.level]);
+    const { added, powerup, readyAt } = await recordAnswer(state.code, g, teamId, state.uid, true, REWARD[Q.q.level]);
+    const kind = earnKind(g, state.uid);
+    if (kind !== "shots") {
+      // navigator / scientist: one power-up, then a wait before the next can be earned
+      if (readyAt) Q.lockUntil = Math.max(Q.lockUntil, readyAt);
+      const name = POWERUPS[kind].name.toLowerCase();
+      Q.note = powerup ? `Correct! +1 ${name} for your crew.` : `Correct, but your ${name} is still recharging.`;
+      if (powerup) { toast(`+1 ${POWERUPS[kind].name}!`, "big"); sfx.power(); }
+    } else {
     Q.note = added ? `Correct! +${added} shot${added === 1 ? "" : "s"} for your crew.` : "Correct, but your crew's shots are full. Fire some first!";
     if (powerup) {
       Q.note += ` Three in a row: your crew earned a${powerup === "airstrike" ? "n" : ""} ${POWERUPS[powerup].name.toLowerCase()}!`;
       toast(`Power-up: ${POWERUPS[powerup].name}!`, "big");
       sfx.power();
     } else if (added) toast(`+${added} shot${added === 1 ? "" : "s"}!`, "big");
+    }
   } else {
     Q.lockUntil = Date.now() + 10000;
     Q.note = "Not this time. Read the explanation, then try another.";
@@ -685,15 +882,22 @@ function renderCode() {
   const C = battle.code;
   body.innerHTML = `
     <div class="console">
-      <p class="hint">Write pseudocode that uses FIRE(column, row). Each FIRE uses one shot. Tap the chart to add a FIRE line.</p>
+      <p class="hint">${canFireCode() ? "Write pseudocode that uses FIRE(column, row). Each FIRE uses one shot. Tap the chart to add a FIRE line."
+        : "Write pseudocode that uses FIRE(column, row). You're not the gunner, so your first 5 FIRE squares are suggested to the gunner instead. Tap the chart to add a FIRE line."}</p>
       <textarea id="code-input" spellcheck="false" autocapitalize="off" autocomplete="off" rows="9" aria-label="Your pseudocode">${escapeHtml(C.text)}</textarea>
       <div class="btn-row">
         <button class="btn" data-action="arrow" title="Insert the assignment arrow">←</button>
-        <button class="btn fire run" data-action="run" ${C.running ? "disabled" : ""}>${C.running ? "Running…" : "Run"}</button>
+        <button class="btn fire run" data-action="run" ${C.running ? "disabled" : ""}>${C.running ? "Running…" : canFireCode() ? "Run" : "Run and suggest"}</button>
       </div>
       ${C.log.length ? `<ol class="console-log">${C.log.map((l) => `<li class="log-${l.kind}">${escapeHtml(l.text)}</li>`).join("")}</ol>
         <button class="linkish" data-action="clear-log">Clear output</button>` : ""}
     </div>`;
+}
+
+function canFireCode() {
+  const g = state.game;
+  const teamId = g.players[state.uid].team;
+  return !rolesOn(g) || jobsOf(g, teamId, state.uid).includes("gunner");
 }
 
 function insertAtCursor(box, text) {
@@ -722,6 +926,13 @@ async function runCode(teamId) {
     return renderCode();
   }
 
+  if (!canFireCode()) {
+    const cells = [];
+    for (const f of result.fires) if (!cells.some(([r, c]) => r === f.r && c === f.c) && cells.length < 5) cells.push([f.r, f.c]);
+    await suggestTargets(state.code, teamId, state.uid, cells);
+    C.log.push({ kind: "info", text: `Suggested to your gunner: ${cells.map((c) => cellName(...c)).join(", ")}${result.fires.length > 5 ? " (only the first 5 squares are sent)" : ""}.` });
+    return renderCode();
+  }
   C.running = true; renderCode();
   for (const f of result.fires) {
     const where = cellName(f.r, f.c);
@@ -747,7 +958,7 @@ async function runCode(teamId) {
 function leaveGame() {
   if (state.stop) state.stop();
   Object.assign(state, { code: null, game: null, stop: null, target: null, busy: false });
-  Object.assign(seen, { shots: null, storm: 0, won: false });
+  Object.assign(seen, { shots: null, storm: 0, won: false, jobs: null, suggest: null });
   Object.assign(battle, { tab: "fire", weapon: "shot" });
   Object.assign(battle.torpedo, { puzzle: null, cell: null, result: null, readyAt: 0 });
   battle.quiz.lockUntil = 0;

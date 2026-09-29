@@ -15,6 +15,7 @@ New to pseudocode? Read the [Pseudocode Lesson](PSEUDOCODE_LESSON.md). It teache
 5. [The battle](#5-the-battle)
 6. [Four ways to attack](#6-four-ways-to-attack)
 7. [Power-ups](#7-power-ups)
+   - [Crew roles](#crew-roles)
 8. [The storm](#8-the-storm)
 9. [Winning (and losing)](#9-winning-and-losing)
 10. [Strategy tips](#10-strategy-tips)
@@ -188,6 +189,23 @@ To use one, go to the **Fire** tab, choose it as your weapon, tap a square, and 
 
 **Combo:** use a sonar first, then aim an airstrike or your shots at the diamonds.
 
+### Crew roles
+
+Your teacher can switch on **crew roles**. When fleet placement opens, one crew member is picked at random to be **captain**.
+
+| Job | What you do | Correct answers earn |
+|---|---|---|
+| 👑 **Captain** | Places the fleet (nobody else can) and gives everyone a job from the **Your crew** list. Any job nobody has is the captain's. Can hand the captaincy to someone else with **Make captain** | Whatever their own job earns |
+| 🎯 **Gunner** | The only one who can **fire shots** and run `FIRE` code. Picks targets from the crew's suggestions | Shots |
+| 🧭 **Navigator** | Uses the crew's **sonar** | 1 sonar, then waits (15 seconds unless the teacher changes it) before earning the next |
+| 🧪 **Scientist** | Calls in the crew's **airstrikes** | 1 airstrike, then waits (90 seconds unless the teacher changes it) before earning the next |
+| ⚓ **Crew** | Earns shots and suggests targets to the gunner | Shots |
+
+- **Everyone** can still launch **torpedoes**, which never miss.
+- **Suggesting targets:** if you're not the gunner, tap a square and press **Suggest to the gunner**. Suggested squares get an orange badge on your crew's chart showing how many of you picked them, and they're listed under **Crew suggestions**. The gunner taps one to aim at it. In the **Code** tab, a non-gunner's program suggests its first 5 `FIRE` squares instead of firing.
+- A small crew still has every job covered, because the captain does any job nobody else has. A crew of one does everything.
+- With roles on, 3 right in a row doesn't give a random power-up. That's the navigator's and scientist's job.
+
 ---
 
 ## 8. The storm
@@ -229,6 +247,7 @@ If your fleet is sunk, keep watching. The chart keeps updating until the end. Wh
 | I can't click my ships during placement | Your crew locked in. Press **Unlock fleet** |
 | A crew is greyed out | It's full, or it's ahead of the others. Join a smaller crew |
 | I joined the wrong crew | Press **Leave this crew** before the battle starts |
+| I can't place ships or fire | Crew roles are on: only the captain places ships and only the gunner fires. Suggest targets to your gunner instead |
 | The chart is too small on my phone | Press **+** or pinch with two fingers. **Fit** zooms back out |
 | The Fire button is greyed out | Pick a target square first, or your crew has run out of that weapon |
 | "That's your own waters" | Aim at a square in another team's colour |

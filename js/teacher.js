@@ -4,11 +4,12 @@
 import {
   ensureSignedIn, createGame, watchGame, gameExists, setPhase,
   startBattle, giveAmmo, endGame, addFeed, setMode, modesOf,
-  advanceStorm, setStormNextAt, givePowerups,
+  advanceStorm, setStormNextAt, givePowerups, ensureCaptains,
 } from "./firebase.js";
 import {
   TEAM_PRESETS, fleetComplete, maxStorm, ZONE, ZONE_SIZES, SHIP_TYPES, DEFAULT_FLEET, MAX_PER_TYPE,
   gridSize, colLabel, fleetFor, randomFleet, zoneFor, avatarOf,
+  ROLES, rolesOn, captainOf, roleOf,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 
@@ -67,6 +68,10 @@ function checkMapAndFleet() {
 }
 checkMapAndFleet();
 
+const showRoleTimes = () => { $("role-times").hidden = !$("roles-on").checked; };
+$("roles-on").addEventListener("change", showRoleTimes);
+showRoleTimes();
+
 const ready = ensureSignedIn().catch(() => { $("setup-msg").textContent = "Couldn't connect to Firebase. Check the internet connection."; });
 
 $("setup-form").addEventListener("submit", async (e) => {
@@ -84,6 +89,9 @@ $("setup-form").addEventListener("submit", async (e) => {
     zoneSize: +$("zone-size").value,
     crewMax: Math.max(0, Math.round(+$("crew-max").value || 0)),
     evenTeams: $("even-teams").checked,
+    roles: $("roles-on").checked,
+    navSecs: Math.max(5, Math.round(+$("nav-secs").value || 15)),
+    sciSecs: Math.max(10, Math.round(+$("sci-secs").value || 90)),
     fleet: readFleet(),
     modes: {
       quiz: $("mode-quiz").checked,
@@ -113,7 +121,7 @@ function openGame(code) {
   $("join-url").textContent = location.href.replace(/teacher\.html.*$/, "");
   $("projector-link").href = location.href.replace(/teacher\.html.*$/, "") + "projector.html?code=" + code;
   if (state.stop) state.stop();
-  state.stop = watchGame(code, (g) => { state.game = g; render(); });
+  state.stop = watchGame(code, (g) => { state.game = g; render(); pickCaptains(g); });
   startReloadClock();
 }
 
@@ -170,13 +178,21 @@ function render() {
   renderFeed($("feed"), g);
 
   $("crews").innerHTML = Object.entries(g.teams).map(([id, t]) => {
-    const names = Object.values(g.players || {}).filter((p) => p.team === id)
-      .map((p) => `${avatarOf(p.avatar) ? `<span class="av">${avatarOf(p.avatar)}</span>` : ""}${escapeHtml(p.name)}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
+    const names = Object.entries(g.players || {}).filter(([, p]) => p.team === id)
+      .map(([uid, p]) => `${avatarOf(p.avatar) ? `<span class="av">${avatarOf(p.avatar)}</span>` : ""}${escapeHtml(p.name)}${rolesOn(g) ? ` <span class="role-tag" title="${captainOf(g, id) === uid ? "Captain, " : ""}${ROLES[roleOf(g, uid)].name}">${captainOf(g, id) === uid ? ROLES.captain.icon : ""}${ROLES[roleOf(g, uid)].icon}</span>` : ""}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
     return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${escapeHtml(t.name)} (${names.length}):</strong> ${names.join(", ") || "none yet"}</p>`;
   }).join("") + (() => {
     const loose = Object.values(g.players || {}).filter((p) => !p.team).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
     return loose.length ? `<p><strong>No team:</strong> ${loose.join(", ")}</p>` : "";
   })();
+}
+
+// With crew roles on, this tab picks a random captain for each crew and fills empty jobs
+let captainsBusy = false;
+async function pickCaptains(g) {
+  if (captainsBusy || !rolesOn(g)) return;
+  captainsBusy = true;
+  try { await ensureCaptains(state.code, g); } finally { captainsBusy = false; }
 }
 
 function fmt(secs) { return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`; }
