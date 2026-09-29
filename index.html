@@ -49,6 +49,7 @@
     <section id="screen-wait" class="screen" hidden>
       <h2 id="wait-title">You're aboard</h2>
       <p>Waiting for your teacher to open fleet placement.</p>
+      <button class="btn" id="leave-team" type="button">Leave this crew</button>
       <fieldset class="avatar-picker" id="wait-avatar" role="radiogroup" aria-label="Your avatar">
         <legend>Change your avatar</legend>
       </fieldset>
@@ -57,7 +58,14 @@
 
     <!-- Place ships / battle / finished share this layout -->
     <section id="screen-play" class="screen play" hidden>
-      <div class="chart-wrap"><div id="ocean"></div></div>
+      <div class="chart-box" id="chart-box">
+        <div class="zoom-bar" role="group" aria-label="Chart zoom">
+          <button class="btn" type="button" data-zoom="out" aria-label="Zoom out">−</button>
+          <button class="btn" type="button" data-zoom="fit" aria-pressed="true">Fit</button>
+          <button class="btn" type="button" data-zoom="in" aria-label="Zoom in">+</button>
+        </div>
+        <div class="chart-wrap"><div id="ocean"></div></div>
+      </div>
       <aside class="panel" id="panel"></aside>
     </section>
   </main>

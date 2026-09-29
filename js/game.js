@@ -211,3 +211,39 @@ export function sonarCells(r, c, s) {
   }
   return out;
 }
+
+// ---------------- crews ----------------
+// Can this player join teamId? Returns "" if yes, or the reason why not.
+// evenTeams: a crew can't get more than one player ahead of the smallest crew.
+// crewMax: most players a crew can have (0 = no limit).
+export function crewBlock(game, teamId, uid) {
+  const s = game.settings;
+  const team = game.teams[teamId];
+  if (!team || !team.alive) return "This crew is out.";
+  const counts = {};
+  for (const id of Object.keys(game.teams)) counts[id] = 0;
+  for (const [pid, p] of Object.entries(game.players || {})) {
+    if (pid !== uid && p.team && p.team in counts) counts[p.team]++;
+  }
+  if (s.crewMax > 0 && counts[teamId] >= s.crewMax) return "Full";
+  if (s.evenTeams) {
+    const open = Object.keys(counts).filter((id) => game.teams[id].alive && !(s.crewMax > 0 && counts[id] >= s.crewMax));
+    const smallest = Math.min(...open.map((id) => counts[id]));
+    if (counts[teamId] > smallest) return "Join a smaller crew first";
+  }
+  return "";
+}
+
+// ---------------- torpedoes ----------------
+// Torpedoes never miss: they aim at an unhit square of an enemy ship that's still afloat
+export function torpedoTargets(game, teamId) {
+  const shots = game.shots || {};
+  const out = [];
+  for (const [tid, fleet] of Object.entries(game.fleets || {})) {
+    if (tid === teamId || !game.teams[tid] || !game.teams[tid].alive) continue;
+    for (const ship of shipList(fleet)) {
+      for (const [r, c] of shipCells(ship)) if (!shots[cellKey(r, c)]) out.push([r, c]);
+    }
+  }
+  return out;
+}

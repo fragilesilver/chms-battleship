@@ -37,6 +37,10 @@ If your page refreshes or your laptop sleeps, just open the link again. The game
 
 Tap the team your teacher assigned you. Each team has its own colour, shown by the little flag (pennant) next to its name.
 
+Your teacher can keep crews **even**: a crew can't get more than one player ahead of the smallest crew. They can also set a **maximum crew size**. A crew you can't join is greyed out and says why ("Full" or "Join a smaller crew first"). It opens again when the other crews catch up.
+
+**Picked the wrong crew?** Press **Leave this crew** while you wait in the lobby, or **Leave ... and pick another crew** at the bottom of the placement panel. You can switch crews any time before the battle starts.
+
 While you wait for your teacher to open fleet placement, you can still **change your avatar**.
 
 ---
@@ -65,6 +69,10 @@ If your crew hasn't locked in when the battle starts, you get a random fleet.
 ## 4. Reading the chart
 
 Columns are **letters** along the top and rows are **numbers** down the side. A square is named column-then-row: **C7** means column C, row 7.
+
+**Zooming:** use the **−**, **Fit** and **+** buttons above the chart. On a phone or tablet you can also **pinch with two fingers** on the chart. When zoomed in, drag with one finger to move around. The letters and numbers stay at the edges so you always know where you are. **Fit** shows the whole ocean again.
+
+**On a phone** the chart stays pinned to the top of the screen while you scroll the panel underneath, so you can pick a square and press Fire without scrolling back up.
 
 | You see | It means |
 |---|---|
@@ -114,7 +122,7 @@ You can't fire at your own waters, or at a square that's already been hit by any
 
 ### Earn shots tab: answer questions
 
-Answer pseudocode multiple-choice questions to earn shots for your crew:
+Answer pseudocode multiple-choice questions to earn shots for your crew. About half come from the question bank (data types, loops, validation, test data, searching and sorting, and more). The other half are **brand-new trace questions made up on the spot**, so you'll rarely see the same one twice:
 
 | Level | Reward |
 |---|---|
@@ -126,15 +134,24 @@ Get it wrong and you'll see the explanation. Read it! You have to wait **10 seco
 
 Get **3 right in a row** and your crew earns a **power-up** (see below). A wrong answer resets your streak.
 
-### Torpedo tab: trace the code
+### Torpedo tab: solve the code, never miss
 
-A torpedo is a **free shot** (it uses no shots), but its target is hidden inside a short program.
+A torpedo is a **free shot** (it uses no shots) that **never misses**. When you load it, it locks on to a square of an enemy ship that hasn't been hit yet. Solve its code puzzle and it's a guaranteed hit.
 
 1. Press **Load a torpedo**.
-2. **Trace** the code to work out which square it outputs, like `F7`.
-3. Type the square, or tap it on the chart, and press **Launch**.
+2. Solve the puzzle. Every torpedo gets one of three kinds at random:
 
-If you're right, the torpedo fires at that square. If you're wrong, it's lost. Either way you wait for the torpedo to reload before loading another. See [Part 8 of the lesson](PSEUDOCODE_LESSON.md#8-reading-code-trace-tables) for how to trace.
+   | Puzzle | What you do | Example answer |
+   |---|---|---|
+   | **Find the square** | Trace the code to find the square it outputs. You can also tap the square on the chart | `F7` |
+   | **Predict the output** | Trace the code and type exactly what it outputs | `12`, `Hit`, `2 5` |
+   | **Fill the gap** | One number in the code is replaced by **?**. Type a whole number that makes the program give the output shown | `4` |
+
+3. Press **Launch**.
+
+If you're right, the torpedo hits and you find out where. If another crew hit that square while you were thinking, the torpedo homes in on another enemy ship instead. If you're wrong, the torpedo is lost and you're shown the answer. Either way you wait for it to reload before loading another.
+
+Answers aren't case-sensitive: `hit` and `HIT` both count. For **Fill the gap**, any number that gives the right output is accepted. See [Part 8 of the lesson](PSEUDOCODE_LESSON.md#8-reading-code-trace-tables) for how to trace.
 
 ### Code tab: write a program
 
@@ -210,6 +227,9 @@ If your fleet is sunk, keep watching. The chart keeps updating until the end. Wh
 |---|---|
 | "No game with code ..." | Check the code on the board. The letter O and the number 0 aren't used, and neither are I and 1 |
 | I can't click my ships during placement | Your crew locked in. Press **Unlock fleet** |
+| A crew is greyed out | It's full, or it's ahead of the others. Join a smaller crew |
+| I joined the wrong crew | Press **Leave this crew** before the battle starts |
+| The chart is too small on my phone | Press **+** or pinch with two fingers. **Fit** zooms back out |
 | The Fire button is greyed out | Pick a target square first, or your crew has run out of that weapon |
 | "That's your own waters" | Aim at a square in another team's colour |
 | My shots went down but I didn't fire | A teammate fired. Shots are shared by the crew |

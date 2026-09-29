@@ -82,6 +82,8 @@ $("setup-form").addEventListener("submit", async (e) => {
     torpedoSecs: +$("torpedo-secs").value,
     stormMins: +$("storm-mins").value,
     zoneSize: +$("zone-size").value,
+    crewMax: Math.max(0, Math.round(+$("crew-max").value || 0)),
+    evenTeams: $("even-teams").checked,
     fleet: readFleet(),
     modes: {
       quiz: $("mode-quiz").checked,
@@ -170,7 +172,7 @@ function render() {
   $("crews").innerHTML = Object.entries(g.teams).map(([id, t]) => {
     const names = Object.values(g.players || {}).filter((p) => p.team === id)
       .map((p) => `${avatarOf(p.avatar) ? `<span class="av">${avatarOf(p.avatar)}</span>` : ""}${escapeHtml(p.name)}${p.correct || p.wrong ? ` <span class="score">${p.correct || 0}/${(p.correct || 0) + (p.wrong || 0)}</span>` : ""}`);
-    return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${escapeHtml(t.name)}:</strong> ${names.join(", ") || "none yet"}</p>`;
+    return `<p style="--tc:${t.color}"><span class="pennant"></span><strong>${escapeHtml(t.name)} (${names.length}):</strong> ${names.join(", ") || "none yet"}</p>`;
   }).join("") + (() => {
     const loose = Object.values(g.players || {}).filter((p) => !p.team).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
     return loose.length ? `<p><strong>No team:</strong> ${loose.join(", ")}</p>` : "";

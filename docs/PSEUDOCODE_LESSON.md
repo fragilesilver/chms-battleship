@@ -7,7 +7,7 @@ You use pseudocode in three places in the game:
 | Where | What you do | Skill |
 |---|---|---|
 | **Earn shots** tab | Answer questions about code | Reading |
-| **Torpedo** tab | Work out which square a program outputs | Reading (tracing) |
+| **Torpedo** tab | Find the square a program outputs, predict its output, or fill in a missing number | Reading (tracing) |
 | **Code** tab | Write programs that fire at the enemy | Writing |
 
 **How to use this lesson:** work through Parts 1 to 8 in order. Try each example yourself before you read the output. Part 9 has practice questions with hidden answers.
@@ -458,6 +458,25 @@ Type **F7** (or tap F7 on the chart) and launch.
 - Keep going to the end. A variable can change several times before the `OUTPUT`.
 - Count carefully in `SUBSTRING`: the **first** letter is position **1**, not 0.
 - If you see `MOD` or `DIV` in an `IF`, work out the condition first, then follow **only** the THEN branch or **only** the ELSE branch, never both.
+
+### The other torpedo puzzles
+
+Not every torpedo asks for a square. The same tracing skill solves all three kinds:
+
+- **Predict the output:** trace to the end and type exactly what `OUTPUT` shows. Remember that OUTPUT joins values with no spaces unless the code outputs a `" "`.
+- **Fill the gap:** one number is shown as `?`. Try a value, trace the program with it, and compare with the output you need. Adjust and try again. Working **backwards** from the output often gets there faster.
+
+For example, what goes where the `?` is so this outputs `15`?
+
+```
+Total ← 0
+FOR i ← 1 TO ?
+    Total ← Total + i
+NEXT i
+OUTPUT Total
+```
+
+Work backwards: 1 + 2 + 3 + 4 + 5 = 15, so the answer is **5**.
 
 ---
 

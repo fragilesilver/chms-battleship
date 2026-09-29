@@ -4,18 +4,20 @@
 import {
   ensureSignedIn, watchGame, getPhase, joinGame, chooseTeam,
   saveFleet, setReady, fire, recordAnswer, modesOf, useSonar, useAirstrike,
-  setAvatar, crewAvatars,
+  setAvatar, crewAvatars, leaveTeam,
 } from "./firebase.js";
 import {
   fleetFor, shipName, AVATARS, avatarOf, zoneFor, teamIndex, canPlace, randomFleet, shipCells, fleetComplete,
   cellName, zoneOwner, cellKey, gridSize, colLabel,
-  POWERUPS, airstrikeCells, sonarCells, maxStorm,
+  POWERUPS, airstrikeCells, sonarCells, maxStorm, crewBlock, torpedoTargets,
 } from "./game.js";
 import { renderOcean, renderTeams, renderFeed, escapeHtml } from "./board.js";
 import { QUESTIONS, REWARD } from "./questions.js";
 import { makeTorpedo, normaliseCell } from "./trace.js";
+import { makeQuestion, makeOutputPuzzle, makeBlankPuzzle } from "./puzzles.js";
 import { run as runPseudo } from "./pseudocode.js";
 import { sfx, muteButton } from "./sound.js";
+import { attachZoom } from "./zoom.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -32,6 +34,7 @@ const state = {
 
 // ---------------- start-up ----------------
 muteButton($("mute"));
+attachZoom($("chart-box"));
 setInterval(() => {
   const el = document.querySelector(".storm-line");
   if (el && state.game) el.outerHTML = stormLine(state.game) || "<div class=\"storm-line\"></div>";
@@ -152,15 +155,22 @@ function watchEvents(g, teamId) {
 // ---------------- team picker ----------------
 function renderTeamPicker(g) {
   show("team");
+  const s = g.settings;
+  $("team-note").textContent = s.evenTeams || s.crewMax > 0
+    ? `Pick the team your teacher assigned you. ${s.evenTeams ? "Crews stay even, so some may be closed until the others catch up." : ""}${s.crewMax > 0 ? ` Up to ${s.crewMax} per crew.` : ""}`
+    : "Pick the team your teacher assigned you.";
   $("team-picker").innerHTML = Object.entries(g.teams).map(([id, t]) => {
     const crew = Object.values(g.players || {}).filter((p) => p.team === id).map((p) => (avatarOf(p.avatar) ? avatarOf(p.avatar) + " " : "") + escapeHtml(p.name));
-    return `<li><button class="team-btn" data-team="${id}" style="--tc:${t.color}" ${t.alive ? "" : "disabled"}>
+    const block = crewBlock(g, id, state.uid);
+    return `<li><button class="team-btn" data-team="${id}" style="--tc:${t.color}" ${block ? "disabled" : ""}>
       <span class="pennant"></span><strong>${escapeHtml(t.name)}</strong>
-      <span class="crew">${crew.length ? crew.join(", ") : "No crew yet"}</span></button></li>`;
+      <span class="crew">${crew.length} aboard${crew.length ? ": " + crew.join(", ") : ""}</span>
+      ${block && t.alive ? `<span class="crew closed">${block}</span>` : ""}</button></li>`;
   }).join("");
-  $("team-picker").onclick = (e) => {
+  $("team-picker").onclick = async (e) => {
     const b = e.target.closest("[data-team]");
-    if (b) chooseTeam(state.code, state.uid, b.dataset.team);
+    if (!b) return;
+    try { await chooseTeam(state.code, state.game, state.uid, b.dataset.team); } catch (err) { toast(err.message); }
   };
 }
 
@@ -168,6 +178,7 @@ function renderWaiting(g, team) {
   show("wait");
   $("wait-title").textContent = `You're aboard with ${team.name}`;
   if (!$("wait-avatar").querySelector(".avatar-opt")) drawAvatarPicker($("wait-avatar"));
+  $("leave-team").onclick = () => leaveTeam(state.code, state.game, state.uid).catch((err) => toast(err.message));
   renderTeams($("wait-teams"), g, g.players[state.uid].team);
 }
 
@@ -217,6 +228,7 @@ function renderPlacement(g, teamId) {
     <button class="btn primary wide" data-action="ready" ${fleetComplete(fleet, g.settings) ? "" : "disabled"}>
       ${ready ? "Unlock fleet" : "Lock in fleet"}</button>
     <p class="hint">${ready ? "Locked in. Waiting for the other teams and your teacher." : fleetComplete(fleet, g.settings) ? "All ships placed. Lock in when your crew agrees." : `Place all ${protos.length} ships to lock in.`}</p>
+    <button class="linkish" data-action="leave-team">Leave ${escapeHtml(g.teams[teamId].name)} and pick another crew</button>
     <h3>Teams</h3><ul class="teams" id="teams"></ul>`;
   renderTeams($("teams"), g, teamId);
 
@@ -234,6 +246,7 @@ function renderPlacement(g, teamId) {
       else toast("Couldn't fit the fleet. Try again.");
     }
     if (act === "ready") await setReady(state.code, teamId, !ready);
+    if (act === "leave-team") await leaveTeam(state.code, g, state.uid).catch((err) => toast(err.message));
   };
 }
 
@@ -271,7 +284,7 @@ const battle = {
   tab: "fire",
   weapon: "shot",   // "shot", "sonar" or "airstrike"
   quiz: { q: null, order: null, picked: null, lockUntil: 0, note: "" },
-  torpedo: { snippet: null, cell: null, result: null, readyAt: 0 },
+  torpedo: { puzzle: null, cell: null, result: null, readyAt: 0 },
   code: {
     text: '// Fire at C7 (column, row)\nFIRE("C", 7)\n\n// A loop fires one shot per turn:\n// FOR Row ← 2 TO 4\n//     FIRE("K", Row)\n// NEXT Row\n',
     log: [], running: false,
@@ -361,7 +374,7 @@ function onChartTap(g, teamId, r, c) {
     box.selectionStart = box.selectionEnd = at + pad.length + line.length;
     return;
   }
-  if (battle.tab === "torpedo" && battle.torpedo.snippet && !battle.torpedo.result) {
+  if (battle.tab === "torpedo" && battle.torpedo.puzzle && battle.torpedo.puzzle.type === "square" && !battle.torpedo.result) {
     const input = $("torpedo-answer");
     if (input) input.value = cellName(r, c);
     return;
@@ -473,11 +486,17 @@ function announce(res) {
 }
 
 // ---------------- Earn shots (quiz) ----------------
+// Half the questions come from the bank, half are freshly made trace questions
 function nextQuestion() {
-  let pool = QUESTIONS.filter((q) => !seenQuestions.has(q.id));
-  if (!pool.length) { seenQuestions.clear(); pool = QUESTIONS; }
-  const q = pool[Math.floor(Math.random() * pool.length)];
-  seenQuestions.add(q.id);
+  let q;
+  if (Math.random() < 0.5) {
+    q = makeQuestion();
+  } else {
+    let pool = QUESTIONS.filter((x) => !seenQuestions.has(x.id));
+    if (!pool.length) { seenQuestions.clear(); pool = QUESTIONS; }
+    q = pool[Math.floor(Math.random() * pool.length)];
+    seenQuestions.add(q.id);
+  }
   const order = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
   Object.assign(battle.quiz, { q, order, picked: null, note: "" });
   renderQuiz(state.game);
@@ -544,16 +563,23 @@ async function answerQuestion(g, teamId, opt) {
   if (battle.tab === "quiz") renderQuiz(g);
 }
 
-// ---------------- Torpedo (trace the code) ----------------
+// ---------------- Torpedo (solve the code, never misses) ----------------
+// A torpedo locks on to a real enemy ship square when it's loaded.
+// Solve its puzzle and it hits. There are three kinds of puzzle:
+//   square  trace the code to find the square it outputs
+//   output  trace the code and type what it outputs
+//   blank   find the missing number that gives the output shown
+const TORPEDO_KINDS = { square: "Find the square", output: "Predict the output", blank: "Fill the gap" };
+
 function renderTorpedo(g) {
   const body = $("tab-body");
   const T = battle.torpedo;
   const wait = Math.ceil((T.readyAt - Date.now()) / 1000);
 
-  if (!T.snippet) {
+  if (!T.puzzle) {
     body.innerHTML = `
       <div class="torpedo">
-        <p>A torpedo is a free shot. Its target is hidden in code: trace the code to find the square, and the torpedo fires there. Get it wrong and it's lost.</p>
+        <p>A torpedo is a free shot that <strong>never misses</strong>: it locks on to an enemy ship. Solve its code puzzle to launch it. Get the puzzle wrong and the torpedo is lost.</p>
         <button class="btn primary wide" data-action="launch" id="launch-btn" ${wait > 0 ? "disabled" : ""}>
           ${wait > 0 ? `Torpedo reloading, <span id="torp-left">${wait}</span>s` : "Load a torpedo"}</button>
       </div>`;
@@ -569,14 +595,20 @@ function renderTorpedo(g) {
     return;
   }
 
+  const P = T.puzzle;
+  const hint = P.type === "square" ? "Trace the code. Which square does it output? Type it, or tap it on the chart." : P.prompt;
   body.innerHTML = `
     <div class="torpedo">
-      <p class="hint">Trace the code. What does it output? Type the square, or tap it on the chart.</p>
-      <pre class="code-view">${escapeHtml(T.snippet.code)}</pre>
+      <p class="q-level">Torpedo puzzle: ${TORPEDO_KINDS[P.type]}</p>
+      <pre class="code-view">${escapeHtml(P.code)}</pre>
+      <p class="q-text">${escapeHtml(hint)}</p>
       ${T.result ? `<p class="${T.result.ok ? "q-note ok" : "q-note"}">${escapeHtml(T.result.text)}</p>
+        ${T.result.explain ? `<p class="explain">${escapeHtml(T.result.explain)}</p>` : ""}
         <button class="btn wide" data-action="launch" ${wait > 0 ? "disabled" : ""}>${wait > 0 ? `Next torpedo in ${wait}s` : "Load another torpedo"}</button>`
       : `<form id="torpedo-form" class="inline">
-          <input id="torpedo-answer" maxlength="3" placeholder="K7" aria-label="Your answer" autocomplete="off" autocapitalize="characters">
+          <input id="torpedo-answer" class="${P.type === "square" ? "square" : ""}" maxlength="${P.type === "square" ? 3 : 24}"
+            placeholder="${P.type === "square" ? "K7" : P.type === "blank" ? "Number" : "Output"}" aria-label="Your answer" autocomplete="off"
+            ${P.type === "blank" ? 'inputmode="numeric"' : ""} autocapitalize="characters" spellcheck="false">
           <button class="btn fire" type="submit">Launch</button>
         </form>`}
     </div>`;
@@ -586,40 +618,63 @@ function renderTorpedo(g) {
 function launchTorpedo(g, teamId) {
   const T = battle.torpedo;
   if (Date.now() < T.readyAt) return;
-  // aim at a random square in a surviving enemy's waters that hasn't been hit
-  const n = g.settings;
-  const { rows, cols } = gridSize(n);
-  const options = [];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const owner = zoneOwner(r, c, n);
-    if (owner && owner !== teamId && g.teams[owner].alive && !(g.shots && g.shots[cellKey(r, c)])) options.push([r, c]);
+  const targets = torpedoTargets(g, teamId);
+  if (!targets.length) return toast("There are no enemy ships left to lock on to.");
+  T.cell = targets[Math.floor(Math.random() * targets.length)];
+  const roll = Math.random();
+  if (roll < 0.4) {
+    const { cols } = gridSize(g.settings);
+    const t = makeTorpedo(...T.cell, cols);
+    T.puzzle = { type: "square", code: t.code, answer: t.answer, check: (v) => normaliseCell(v) === t.answer };
+  } else {
+    T.puzzle = roll < 0.75 ? makeOutputPuzzle() : makeBlankPuzzle();
   }
-  if (!options.length) return toast("No enemy waters left to aim at.");
-  const [r, c] = options[Math.floor(Math.random() * options.length)];
-  T.cell = [r, c];
-  T.snippet = makeTorpedo(r, c, cols);
   T.result = null;
   renderTorpedo(g);
 }
 
 async function submitTorpedo(teamId) {
   const T = battle.torpedo;
-  const guess = normaliseCell($("torpedo-answer").value);
+  const P = T.puzzle;
+  const guess = $("torpedo-answer").value.trim();
   if (!guess) return;
   T.readyAt = Date.now() + (state.game.settings.torpedoSecs || 30) * 1000;
-  if (guess !== T.snippet.answer) {
-    T.result = { ok: false, text: `The code outputs ${T.snippet.answer}, not ${guess}. The torpedo missed its mark.` };
+  if (!P.check(guess)) {
+    T.result = {
+      ok: false,
+      text: P.type === "blank"
+        ? `${guess} doesn't give that output. The torpedo is lost.`
+        : `The code outputs ${P.answer}, not ${guess}. The torpedo is lost.`,
+      explain: P.explain || "",
+    };
     sfx.wrong();
     renderTorpedo(state.game);
     return;
   }
+  // The locked-on square may have been hit by someone else meanwhile: home in on another ship square
+  const g = state.game;
+  let [r, c] = T.cell;
+  let moved = false;
+  if (g.shots && g.shots[cellKey(r, c)]) {
+    const targets = torpedoTargets(g, teamId);
+    if (!targets.length) {
+      T.result = { ok: false, text: "Correct! But there are no enemy ships left to hit." };
+      if (battle.tab === "torpedo") renderTorpedo(g);
+      return;
+    }
+    [r, c] = targets[Math.floor(Math.random() * targets.length)];
+    moved = true;
+  }
   try {
     sfx.fire();
-    const res = await fire(state.code, state.game, teamId, ...T.cell, state.uid, { free: true, via: "torpedo" });
+    const res = await fire(state.code, g, teamId, r, c, state.uid, { free: true, via: "torpedo" });
     announce(res);
-    T.result = { ok: true, text: `Correct, it's ${T.snippet.answer}! Torpedo away: ${res.hit ? "it's a hit!" : "a miss this time."}` };
+    T.result = {
+      ok: true,
+      text: `Correct! Torpedo away${moved ? `. Its first target was already hit, so it homed in on ${res.cell} instead` : ` to ${res.cell}`}: ${res.hit ? "direct hit!" : "a miss."}`,
+    };
   } catch (err) {
-    T.result = { ok: false, text: `Correct trace, but ${err.message.charAt(0).toLowerCase() + err.message.slice(1)}` };
+    T.result = { ok: false, text: `Correct, but ${err.message.charAt(0).toLowerCase() + err.message.slice(1)}` };
   }
   if (battle.tab === "torpedo") renderTorpedo(state.game);
 }
@@ -694,7 +749,7 @@ function leaveGame() {
   Object.assign(state, { code: null, game: null, stop: null, target: null, busy: false });
   Object.assign(seen, { shots: null, storm: 0, won: false });
   Object.assign(battle, { tab: "fire", weapon: "shot" });
-  Object.assign(battle.torpedo, { snippet: null, cell: null, result: null, readyAt: 0 });
+  Object.assign(battle.torpedo, { puzzle: null, cell: null, result: null, readyAt: 0 });
   battle.quiz.lockUntil = 0;
   battle.code.log = [];
   store.set("bs_code", "");

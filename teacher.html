@@ -30,6 +30,13 @@
           <div id="team-names"></div>
         </fieldset>
         <fieldset>
+          <legend>Crew sizes</legend>
+          <label class="check"><input type="checkbox" id="even-teams" checked> Keep crews even: a crew can't get more than one student ahead of the others</label>
+          <label>Most students per crew (0 = no limit)
+            <input id="crew-max" type="number" min="0" max="40" value="0">
+          </label>
+        </fieldset>
+        <fieldset>
           <legend>Map and fleet</legend>
           <label>Each team's home waters
             <select id="zone-size"></select>

@@ -304,7 +304,8 @@ label.check input { width: auto; margin: .3rem 0 0; flex: none; }
 
 /* torpedo */
 .torpedo .inline { margin-top: .6rem; }
-#torpedo-answer { font: 700 1.6rem var(--display); letter-spacing: .08em; text-transform: uppercase; max-width: 7rem; }
+#torpedo-answer { font: 700 1.3rem var(--display); letter-spacing: .04em; }
+#torpedo-answer.square { font-size: 1.6rem; letter-spacing: .08em; text-transform: uppercase; max-width: 7rem; }
 .torpedo .btn.fire { font-size: 1.3rem; padding: .5rem 1rem; }
 
 /* code console */
@@ -443,3 +444,44 @@ body.projector .axis { font-size: 1.1rem; }
 .fleet-sum.bad { color: var(--hit); font-weight: 700; }
 .cell.hit::before, .cell.hit::after { z-index: 1; }
 .cell.hit .ship-icon { opacity: .6; }
+.team-btn:disabled { opacity: .55; cursor: not-allowed; }
+.team-btn .crew.closed { color: var(--hit); font-weight: 700; }
+#leave-team { margin-bottom: 1rem; }
+
+/* ---------- chart zoom + phone layout ---------- */
+.zoom-bar { display: flex; gap: .3rem; justify-content: flex-end; margin-bottom: .35rem; }
+.zoom-bar .btn { padding: .15rem .75rem; min-width: 2.6rem; font-size: 1.1rem; }
+.zoom-bar .btn[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.chart-wrap { touch-action: pan-x pan-y; }
+.chart-wrap.zoomed .ocean {
+  grid-template-columns: 1.6rem repeat(var(--cols), var(--cell));
+  width: max-content; min-width: 0; max-width: none;
+}
+.cell { touch-action: manipulation; container-type: inline-size; }
+.cell .ship-icon { font-size: .9rem; font-size: 62cqi; }
+
+@media (max-width: 900px) {
+  .topbar { padding: .35rem .75rem; gap: .4rem; }
+  .brand { font-size: 1.35rem; }
+  .brand small { display: none; }
+  .who { font-size: .9rem; }
+  .play { gap: .75rem; grid-template-columns: minmax(0, 1fr); }
+  /* the chart stays on screen while the panel scrolls underneath it */
+  .play .chart-box {
+    position: sticky; top: 0; z-index: 5;
+    margin: -.75rem -.75rem 0; padding: .4rem .75rem .5rem;
+    background: var(--paper); border-bottom: 2px solid var(--ink);
+  }
+  .play .chart-wrap { max-height: 48vh; max-height: 48dvh; overflow: auto; padding-bottom: 0; }
+  .play .chart-wrap:not(.zoomed) .ocean {
+    grid-template-columns: 1.3rem repeat(var(--cols), minmax(0, 1fr));
+    min-width: 0;
+  }
+  .play .axis { font-size: .7rem; }
+  .panel { padding: .8rem; }
+  .ammo-n { font-size: 3.4rem; }
+}
+/* keep the letters and numbers in view when the chart is zoomed and scrolled */
+.chart-wrap .axis.col { position: sticky; top: 0; z-index: 2; background: var(--paper); }
+.chart-wrap .axis.row { position: sticky; left: 0; z-index: 2; background: var(--paper); }
+.chart-wrap .axis.corner { position: sticky; top: 0; left: 0; z-index: 3; background: var(--paper); }

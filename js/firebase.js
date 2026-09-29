@@ -10,7 +10,7 @@ import {
   TEAM_PRESETS, MAX_AMMO, teamIds, makeCode, cellKey, cellName, zoneOwner,
   findShipAt, isSunk, shipsAfloat, randomFleet, zoneFor, teamIndex, fleetComplete,
   maxStorm, airstrikeCells, sonarCells, STREAK_FOR_POWERUP, POWERUPS,
-  ZONE, DEFAULT_FLEET, avatarOf, shipName,
+  ZONE, DEFAULT_FLEET, avatarOf, shipName, crewBlock,
 } from "./game.js";
 
 const firebaseConfig = {
@@ -57,7 +57,7 @@ export async function gameExists(code) {
 export const DEFAULT_MODES = { quiz: true, torpedo: true, console: true };
 export const modesOf = (game) => ({ ...DEFAULT_MODES, ...(game.settings.modes || {}) });
 
-export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet }) {
+export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, modes, torpedoSecs, stormMins, zoneSize, fleet, crewMax, evenTeams }) {
   let code;
   do { code = makeCode(); } while (await gameExists(code));
 
@@ -81,6 +81,7 @@ export async function createGame({ teamCount, teamNames, startAmmo, reloadSecs, 
       modes: modes || DEFAULT_MODES, torpedoSecs: torpedoSecs || 30,
       stormMins: stormMins || 0,
       zoneSize: zoneSize || ZONE, fleet: fleet || DEFAULT_FLEET,
+      crewMax: crewMax || 0, evenTeams: evenTeams !== false,
     },
     storm: 0,
     teams,
@@ -140,8 +141,23 @@ export async function joinGame(code, uid, name, avatar) {
 export const setAvatar = (code, uid, avatar) =>
   update(gameRef(code, `players/${uid}`), { avatar: avatarOf(avatar) || null });
 
-export const chooseTeam = (code, uid, teamId) =>
-  update(gameRef(code, `players/${uid}`), { team: teamId });
+// Joining a crew is a transaction so two students can't both take the last place
+export async function chooseTeam(code, game, uid, teamId) {
+  let reason = "";
+  const t = await runTransaction(gameRef(code, "players"), (players) => {
+    if (!players || !players[uid]) return players;
+    reason = crewBlock({ ...game, players }, teamId, uid);
+    if (reason) return undefined;   // abort
+    players[uid].team = teamId;
+    return players;
+  });
+  if (!t.committed) throw new Error(reason === "Full" ? "That crew is full. Pick another." : "Crews must stay even. Join one of the smaller crews.");
+}
+
+export async function leaveTeam(code, game, uid) {
+  if (game.phase !== "lobby" && game.phase !== "placement") throw new Error("You can only change crews before the battle starts.");
+  await update(gameRef(code, `players/${uid}`), { team: null });
+}
 
 export const saveFleet = (code, teamId, fleetObj) =>
   set(gameRef(code, `fleets/${teamId}`), fleetObj);
