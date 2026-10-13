@@ -4,301 +4,2103 @@
   "subject": "Computer Science",
   "exam": "O Level 2210 - Chapters 1 to 6",
   "uiLang": "en",
-  "features": { "generated": false, "torpedo": true, "console": false },
-  "rewards": { "easy": 1, "medium": 2, "hard": 3 },
+  "features": {
+    "generated": false,
+    "torpedo": true,
+    "console": false
+  },
+  "rewards": {
+    "easy": 1,
+    "medium": 2,
+    "hard": 3
+  },
   "questions": [
-    { "id": "c1-binary", "level": "easy", "topic": "1 Data representation",
+    {
+      "id": "c1-binary",
+      "level": "easy",
+      "topic": "1 Data representation",
       "q": "Which number system uses only the digits 0 and 1?",
-      "options": ["Denary", "Binary", "Hexadecimal", "Octal"], "answer": 1,
-      "explain": "Binary is base 2, so it only uses 0 and 1. Computers use it because transistors have two states: on and off." },
-    { "id": "c1-bin-to-den", "level": "easy", "topic": "1 Data representation",
+      "options": [
+        "Denary",
+        "Binary",
+        "Hexadecimal",
+        "Octal"
+      ],
+      "answer": 1,
+      "explain": "Binary is base 2, so it only uses 0 and 1. Computers use it because transistors have two states: on and off."
+    },
+    {
+      "id": "c1-bin-to-den",
+      "level": "easy",
+      "topic": "1 Data representation",
       "q": "What is the denary value of the binary number 1010?",
-      "options": ["12", "8", "10", "5"], "answer": 2,
-      "explain": "1010 = 8 + 0 + 2 + 0 = 10." },
-    { "id": "c1-hex-why", "level": "easy", "topic": "1 Data representation",
+      "options": [
+        "12",
+        "8",
+        "10",
+        "5"
+      ],
+      "answer": 2,
+      "explain": "1010 = 8 + 0 + 2 + 0 = 10."
+    },
+    {
+      "id": "c1-hex-why",
+      "level": "easy",
+      "topic": "1 Data representation",
       "q": "Why do programmers often use hexadecimal instead of binary?",
-      "options": ["Computers can only understand hexadecimal", "It uses less memory in the computer", "It is shorter and easier for humans to read and less error-prone", "It is faster to process"], "answer": 2,
-      "explain": "Hexadecimal is only a shorthand for binary: one hex digit stands for four bits. The computer still stores binary." },
-    { "id": "c1-bytes", "level": "easy", "topic": "1 Data representation",
+      "options": [
+        "Computers can only understand hexadecimal",
+        "It uses less memory in the computer",
+        "It is shorter and easier for humans to read and less error-prone",
+        "It is faster to process"
+      ],
+      "answer": 2,
+      "explain": "Hexadecimal is only a shorthand for binary: one hex digit stands for four bits. The computer still stores binary."
+    },
+    {
+      "id": "c1-bytes",
+      "level": "easy",
+      "topic": "1 Data representation",
       "q": "How many bits are there in one byte?",
-      "options": ["4", "16", "10", "8"], "answer": 3,
-      "explain": "1 byte = 8 bits. A nibble is 4 bits." },
-    { "id": "c1-den-to-bin", "level": "medium", "topic": "1 Data representation",
+      "options": [
+        "4",
+        "16",
+        "10",
+        "8"
+      ],
+      "answer": 3,
+      "explain": "1 byte = 8 bits. A nibble is 4 bits."
+    },
+    {
+      "id": "c1-den-to-bin",
+      "level": "medium",
+      "topic": "1 Data representation",
       "q": "What is the 8-bit binary number for denary 25?",
-      "options": ["00011001", "00010011", "00110001", "00011010"], "answer": 0,
-      "explain": "25 = 16 + 8 + 1, so the bits for 16, 8 and 1 are on: 00011001." },
-    { "id": "c1-bin-to-hex", "level": "medium", "topic": "1 Data representation",
+      "options": [
+        "00011001",
+        "00010011",
+        "00110001",
+        "00011010"
+      ],
+      "answer": 0,
+      "explain": "25 = 16 + 8 + 1, so the bits for 16, 8 and 1 are on: 00011001."
+    },
+    {
+      "id": "c1-bin-to-hex",
+      "level": "medium",
+      "topic": "1 Data representation",
       "q": "What is the hexadecimal value of the binary number 11111010?",
-      "options": ["EA", "FA", "AF", "FB"], "answer": 1,
-      "explain": "Split into nibbles: 1111 = F and 1010 = A, giving FA." },
-    { "id": "c1-shift", "level": "medium", "topic": "1 Data representation",
+      "options": [
+        "EA",
+        "FA",
+        "AF",
+        "FB"
+      ],
+      "answer": 1,
+      "explain": "Split into nibbles: 1111 = F and 1010 = A, giving FA."
+    },
+    {
+      "id": "c1-shift",
+      "level": "medium",
+      "topic": "1 Data representation",
       "q": "A logical left shift of 2 places is applied to 00001011. What is the result, and what is the effect?",
-      "options": ["00000010, divides by 4", "00101100, multiplies by 4", "00010110, multiplies by 2", "11000000, multiplies by 16"], "answer": 1,
-      "explain": "Each left shift doubles the value. Two shifts multiply by 4: 11 x 4 = 44 = 00101100." },
-    { "id": "c1-overflow", "level": "medium", "topic": "1 Data representation",
+      "options": [
+        "00000010, divides by 4",
+        "00101100, multiplies by 4",
+        "00010110, multiplies by 2",
+        "11000000, multiplies by 16"
+      ],
+      "answer": 1,
+      "explain": "Each left shift doubles the value. Two shifts multiply by 4: 11 x 4 = 44 = 00101100."
+    },
+    {
+      "id": "c1-overflow",
+      "level": "medium",
+      "topic": "1 Data representation",
       "q": "What happens when 11001000 and 01100100 are added in an 8-bit register?",
-      "options": ["The answer is 00101100 with no error", "The answer is 100101100 and is stored correctly", "The register becomes empty", "An overflow error occurs because the result needs 9 bits"], "answer": 3,
-      "explain": "200 + 100 = 300, which is bigger than the largest 8-bit value (255). The result cannot fit, so overflow occurs." },
-    { "id": "c1-image-size", "level": "medium", "topic": "1 Data representation",
+      "options": [
+        "The answer is 00101100 with no error",
+        "The answer is 100101100 and is stored correctly",
+        "The register becomes empty",
+        "An overflow error occurs because the result needs 9 bits"
+      ],
+      "answer": 3,
+      "explain": "200 + 100 = 300, which is bigger than the largest 8-bit value (255). The result cannot fit, so overflow occurs."
+    },
+    {
+      "id": "c1-image-size",
+      "level": "medium",
+      "topic": "1 Data representation",
       "q": "An image is 8 pixels wide and 8 pixels high with a colour depth of 4 bits. What is the file size?",
-      "options": ["32 bytes", "64 bytes", "256 bytes", "16 bytes"], "answer": 0,
-      "explain": "8 x 8 = 64 pixels x 4 bits = 256 bits. 256 / 8 = 32 bytes." },
-    { "id": "c1-lossless", "level": "medium", "topic": "1 Data representation",
+      "options": [
+        "32 bytes",
+        "64 bytes",
+        "256 bytes",
+        "16 bytes"
+      ],
+      "answer": 0,
+      "explain": "8 x 8 = 64 pixels x 4 bits = 256 bits. 256 / 8 = 32 bytes."
+    },
+    {
+      "id": "c1-lossless",
+      "level": "medium",
+      "topic": "1 Data representation",
       "q": "Which statement about lossless compression is correct?",
-      "options": ["Some data is permanently removed", "The original file can be rebuilt exactly", "It always gives a smaller file than lossy", "It is only used for sound files"], "answer": 1,
-      "explain": "Lossless compression keeps all the data, so the original can be restored exactly. Lossy permanently removes data." },
-    { "id": "c1-sample", "level": "hard", "topic": "1 Data representation",
+      "options": [
+        "Some data is permanently removed",
+        "The original file can be rebuilt exactly",
+        "It always gives a smaller file than lossy",
+        "It is only used for sound files"
+      ],
+      "answer": 1,
+      "explain": "Lossless compression keeps all the data, so the original can be restored exactly. Lossy permanently removes data."
+    },
+    {
+      "id": "c1-sample",
+      "level": "hard",
+      "topic": "1 Data representation",
       "q": "Which change makes a recorded sound file larger AND the recording more accurate?",
-      "options": ["Lower sampling rate and lower bit depth", "Higher sampling rate and higher bit depth", "Higher sampling rate and lower bit depth", "Using lossy compression"], "answer": 1,
-      "explain": "More samples per second and more bits per sample capture the wave more accurately, but need more storage." },
-    { "id": "c1-twos", "level": "hard", "topic": "1 Data representation",
+      "options": [
+        "Lower sampling rate and lower bit depth",
+        "Higher sampling rate and higher bit depth",
+        "Higher sampling rate and lower bit depth",
+        "Using lossy compression"
+      ],
+      "answer": 1,
+      "explain": "More samples per second and more bits per sample capture the wave more accurately, but need more storage."
+    },
+    {
+      "id": "c1-twos",
+      "level": "hard",
+      "topic": "1 Data representation",
       "q": "What is -5 in 8-bit two's complement?",
-      "options": ["10000101", "11111010", "11111011", "00000101"], "answer": 2,
-      "explain": "5 = 00000101. Invert the bits: 11111010. Add 1: 11111011." },
-    { "id": "c1-ascii", "level": "easy", "topic": "1 Data representation",
+      "options": [
+        "10000101",
+        "11111010",
+        "11111011",
+        "00000101"
+      ],
+      "answer": 2,
+      "explain": "5 = 00000101. Invert the bits: 11111010. Add 1: 11111011."
+    },
+    {
+      "id": "c1-ascii",
+      "level": "easy",
+      "topic": "1 Data representation",
       "q": "What is the main advantage of Unicode over ASCII?",
-      "options": ["It uses fewer bits per character", "It can represent characters from many more languages", "It is only used for numbers", "It cannot be compressed"], "answer": 1,
-      "explain": "ASCII has 128 (or 256 extended) characters. Unicode has a far larger character set covering most languages and symbols." },
-    { "id": "c1-typed-binadd", "level": "medium", "topic": "1 Data representation", "type": "typed",
+      "options": [
+        "It uses fewer bits per character",
+        "It can represent characters from many more languages",
+        "It is only used for numbers",
+        "It cannot be compressed"
+      ],
+      "answer": 1,
+      "explain": "ASCII has 128 (or 256 extended) characters. Unicode has a far larger character set covering most languages and symbols."
+    },
+    {
+      "id": "c1-typed-binadd",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "type": "typed",
       "q": "What is the binary result of 1 + 1?",
-      "accept": ["10", "0010", "00000010"],
-      "explain": "1 + 1 = 2 in denary, which is 10 in binary (0 carry 1)." },
-
-    { "id": "c2-packet", "level": "easy", "topic": "2 Data transmission",
+      "accept": [
+        "10",
+        "0010",
+        "00000010"
+      ],
+      "explain": "1 + 1 = 2 in denary, which is 10 in binary (0 carry 1)."
+    },
+    {
+      "id": "c1-hex-den",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "What is the denary value of the hexadecimal number 2F?",
+      "options": [
+        "47",
+        "32",
+        "15",
+        "63"
+      ],
+      "answer": 0,
+      "explain": "2F = (2 x 16) + 15 = 47."
+    },
+    {
+      "id": "c1-den-hex",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "What is denary 200 in hexadecimal?",
+      "options": [
+        "B8",
+        "C8",
+        "D8",
+        "C4"
+      ],
+      "answer": 1,
+      "explain": "200 / 16 = 12 remainder 8. 12 is C, so 200 = C8."
+    },
+    {
+      "id": "c1-bits-values",
+      "level": "easy",
+      "topic": "1 Data representation",
+      "q": "How many different values can be stored using 4 bits?",
+      "options": [
+        "4",
+        "8",
+        "16",
+        "32"
+      ],
+      "answer": 2,
+      "explain": "Each bit doubles the number of values: 2^4 = 16 (0 to 15)."
+    },
+    {
+      "id": "c1-nibble",
+      "level": "easy",
+      "topic": "1 Data representation",
+      "q": "What is a group of 4 bits called?",
+      "options": [
+        "Byte",
+        "Nibble",
+        "Word",
+        "Packet"
+      ],
+      "answer": 1,
+      "explain": "A nibble is 4 bits, which is exactly one hexadecimal digit."
+    },
+    {
+      "id": "c1-units",
+      "level": "easy",
+      "topic": "1 Data representation",
+      "q": "Which is the correct order of storage units from smallest to largest?",
+      "options": [
+        "Gibibyte, mebibyte, kibibyte, byte",
+        "Byte, mebibyte, kibibyte, gibibyte",
+        "Kibibyte, byte, gibibyte, mebibyte",
+        "Byte, kibibyte, mebibyte, gibibyte"
+      ],
+      "answer": 3,
+      "explain": "Byte, kibibyte (KiB), mebibyte (MiB), gibibyte (GiB). Each is 1024 times the previous."
+    },
+    {
+      "id": "c1-kib",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "How many bytes are in 2 kibibytes?",
+      "options": [
+        "2000",
+        "1024",
+        "2048",
+        "4096"
+      ],
+      "answer": 2,
+      "explain": "1 kibibyte = 1024 bytes, so 2 KiB = 2048 bytes."
+    },
+    {
+      "id": "c1-add",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "What is 00110101 + 00001111 in binary?",
+      "options": [
+        "01000100",
+        "01000011",
+        "00111100",
+        "01000101"
+      ],
+      "answer": 0,
+      "explain": "53 + 15 = 68 = 01000100."
+    },
+    {
+      "id": "c1-rshift",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "A logical right shift of 1 place is applied to 01100100. What is the result?",
+      "options": [
+        "11001000",
+        "00110010",
+        "00011001",
+        "01100100"
+      ],
+      "answer": 1,
+      "explain": "Each right shift halves the value: 100 / 2 = 50 = 00110010."
+    },
+    {
+      "id": "c1-colourdepth",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "What does colour depth mean in an image?",
+      "options": [
+        "The number of pixels in the image",
+        "The size of the screen",
+        "The number of bits used to represent the colour of each pixel",
+        "The brightness of the image"
+      ],
+      "answer": 2,
+      "explain": "More bits per pixel means more possible colours, and a larger file."
+    },
+    {
+      "id": "c1-resolution",
+      "level": "easy",
+      "topic": "1 Data representation",
+      "q": "What is image resolution?",
+      "options": [
+        "The number of colours used",
+        "The number of pixels that make up the image",
+        "The file format of the image",
+        "The compression type"
+      ],
+      "answer": 1,
+      "explain": "Resolution is the number of pixels, usually width x height. More pixels means more detail and a larger file."
+    },
+    {
+      "id": "c1-lossy",
+      "level": "easy",
+      "topic": "1 Data representation",
+      "q": "Which file type normally uses lossy compression?",
+      "options": [
+        "MP3",
+        "ZIP",
+        "PNG",
+        "TXT"
+      ],
+      "answer": 0,
+      "explain": "MP3 (sound) and JPEG (images) are lossy. ZIP and PNG are lossless."
+    },
+    {
+      "id": "c1-rle",
+      "level": "hard",
+      "topic": "1 Data representation",
+      "q": "Run length encoding (RLE) works best on which kind of data?",
+      "options": [
+        "Data with long runs of repeated values",
+        "Random noise",
+        "Encrypted data",
+        "Data that is already compressed"
+      ],
+      "answer": 0,
+      "explain": "RLE stores a value and how many times it repeats, so it compresses repeated data well. It can make random data larger."
+    },
+    {
+      "id": "c1-ascii-bits",
+      "level": "medium",
+      "topic": "1 Data representation",
+      "q": "Standard ASCII uses 7 bits per character. How many different characters can it represent?",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512"
+      ],
+      "answer": 1,
+      "explain": "2^7 = 128 characters."
+    },
+    {
+      "id": "c1-twos-range",
+      "level": "hard",
+      "topic": "1 Data representation",
+      "q": "What range of denary values can an 8-bit two's complement integer store?",
+      "options": [
+        "0 to 255",
+        "-127 to 127",
+        "-255 to 255",
+        "-128 to 127"
+      ],
+      "answer": 3,
+      "explain": "The most significant bit is worth -128, so the range is -128 to +127."
+    },
+    {
+      "id": "c1-sample-rate",
+      "level": "easy",
+      "topic": "1 Data representation",
+      "q": "What is the sample rate of a sound recording?",
+      "options": [
+        "The number of bits per sample",
+        "The volume of the sound",
+        "The number of samples taken each second",
+        "The length of the recording"
+      ],
+      "answer": 2,
+      "explain": "Sample rate is measured in hertz (Hz), the number of samples captured per second."
+    },
+    {
+      "id": "c2-packet",
+      "level": "easy",
+      "topic": "2 Data transmission",
       "q": "Which part of a data packet holds the destination address and packet number?",
-      "options": ["Payload", "Trailer", "Header", "Footer"], "answer": 2,
-      "explain": "The header holds the destination address, the originator's address and the packet number. The payload is the data itself." },
-    { "id": "c2-switching", "level": "easy", "topic": "2 Data transmission",
+      "options": [
+        "Payload",
+        "Trailer",
+        "Header",
+        "Footer"
+      ],
+      "answer": 2,
+      "explain": "The header holds the destination address, the originator's address and the packet number. The payload is the data itself."
+    },
+    {
+      "id": "c2-switching",
+      "level": "easy",
+      "topic": "2 Data transmission",
       "q": "In packet switching, what can happen to the packets of one message?",
-      "options": ["They all take the same route in order", "They can take different routes and arrive in any order", "They are sent as a single block", "They are never reassembled"], "answer": 1,
-      "explain": "Each packet is routed independently and the receiving device puts them back in order using the packet numbers." },
-    { "id": "c2-serial", "level": "easy", "topic": "2 Data transmission",
+      "options": [
+        "They all take the same route in order",
+        "They can take different routes and arrive in any order",
+        "They are sent as a single block",
+        "They are never reassembled"
+      ],
+      "answer": 1,
+      "explain": "Each packet is routed independently and the receiving device puts them back in order using the packet numbers."
+    },
+    {
+      "id": "c2-serial",
+      "level": "easy",
+      "topic": "2 Data transmission",
       "q": "Which method sends data one bit at a time down a single wire?",
-      "options": ["Parallel transmission", "Serial transmission", "Simplex transmission", "Broadcast"], "answer": 1,
-      "explain": "Serial sends one bit after another along one wire. Parallel sends several bits at once along several wires." },
-    { "id": "c2-parallel", "level": "medium", "topic": "2 Data transmission",
+      "options": [
+        "Parallel transmission",
+        "Serial transmission",
+        "Simplex transmission",
+        "Broadcast"
+      ],
+      "answer": 1,
+      "explain": "Serial sends one bit after another along one wire. Parallel sends several bits at once along several wires."
+    },
+    {
+      "id": "c2-parallel",
+      "level": "medium",
+      "topic": "2 Data transmission",
       "q": "Why is parallel transmission unsuitable for long distances?",
-      "options": ["It can only send text", "It cannot be encrypted", "It is always slower than serial", "Bits can arrive out of sync (skewed) and interfere with each other"], "answer": 3,
-      "explain": "Over long cables the bits on the separate wires arrive at slightly different times (skew) and cause crosstalk." },
-    { "id": "c2-duplex", "level": "medium", "topic": "2 Data transmission",
+      "options": [
+        "It can only send text",
+        "It cannot be encrypted",
+        "It is always slower than serial",
+        "Bits can arrive out of sync (skewed) and interfere with each other"
+      ],
+      "answer": 3,
+      "explain": "Over long cables the bits on the separate wires arrive at slightly different times (skew) and cause crosstalk."
+    },
+    {
+      "id": "c2-duplex",
+      "level": "medium",
+      "topic": "2 Data transmission",
       "q": "A walkie-talkie lets two people talk, but only one at a time. Which transmission mode is this?",
-      "options": ["Half-duplex", "Simplex", "Full-duplex", "Parallel"], "answer": 0,
-      "explain": "Half-duplex: both directions, but not at the same time. Full-duplex is both at once. Simplex is one direction only." },
-    { "id": "c2-parity", "level": "medium", "topic": "2 Data transmission",
+      "options": [
+        "Half-duplex",
+        "Simplex",
+        "Full-duplex",
+        "Parallel"
+      ],
+      "answer": 0,
+      "explain": "Half-duplex: both directions, but not at the same time. Full-duplex is both at once. Simplex is one direction only."
+    },
+    {
+      "id": "c2-parity",
+      "level": "medium",
+      "topic": "2 Data transmission",
       "q": "Using EVEN parity, what parity bit should be added to 1011001?",
-      "options": ["1", "0", "Either one", "No parity bit is needed"], "answer": 1,
-      "explain": "1011001 has four 1s, which is already even, so the parity bit is 0." },
-    { "id": "c2-arq", "level": "medium", "topic": "2 Data transmission",
+      "options": [
+        "1",
+        "0",
+        "Either one",
+        "No parity bit is needed"
+      ],
+      "answer": 1,
+      "explain": "1011001 has four 1s, which is already even, so the parity bit is 0."
+    },
+    {
+      "id": "c2-arq",
+      "level": "medium",
+      "topic": "2 Data transmission",
       "q": "How does Automatic Repeat Request (ARQ) deal with errors?",
-      "options": ["It corrects the error without resending", "It deletes the data", "It uses acknowledgements and timeouts to request resending of data", "It encrypts the data again"], "answer": 2,
-      "explain": "The receiver sends a positive or negative acknowledgement. If none arrives before the timeout, the sender resends the packet." },
-    { "id": "c2-checks", "level": "medium", "topic": "2 Data transmission",
+      "options": [
+        "It corrects the error without resending",
+        "It deletes the data",
+        "It uses acknowledgements and timeouts to request resending of data",
+        "It encrypts the data again"
+      ],
+      "answer": 2,
+      "explain": "The receiver sends a positive or negative acknowledgement. If none arrives before the timeout, the sender resends the packet."
+    },
+    {
+      "id": "c2-checks",
+      "level": "medium",
+      "topic": "2 Data transmission",
       "q": "Which check sends data back to the sender so it can be compared with the original?",
-      "options": ["Checksum", "Parity check", "Echo check", "Check digit"], "answer": 2,
-      "explain": "An echo check returns the received data to the sender. If it differs from what was sent, an error occurred. It cannot tell whether the error happened on the way there or back." },
-    { "id": "c2-symmetric", "level": "hard", "topic": "2 Data transmission",
+      "options": [
+        "Checksum",
+        "Parity check",
+        "Echo check",
+        "Check digit"
+      ],
+      "answer": 2,
+      "explain": "An echo check returns the received data to the sender. If it differs from what was sent, an error occurred. It cannot tell whether the error happened on the way there or back."
+    },
+    {
+      "id": "c2-symmetric",
+      "level": "hard",
+      "topic": "2 Data transmission",
       "q": "Which statement about asymmetric encryption is correct?",
-      "options": ["The same key is used to encrypt and decrypt", "Only a public key is used", "A public key encrypts and a different private key decrypts", "It does not use keys"], "answer": 2,
-      "explain": "Asymmetric encryption uses a key pair. Anyone can use the public key to encrypt, but only the owner's private key can decrypt." },
-    { "id": "c2-usb", "level": "easy", "topic": "2 Data transmission",
+      "options": [
+        "The same key is used to encrypt and decrypt",
+        "Only a public key is used",
+        "A public key encrypts and a different private key decrypts",
+        "It does not use keys"
+      ],
+      "answer": 2,
+      "explain": "Asymmetric encryption uses a key pair. Anyone can use the public key to encrypt, but only the owner's private key can decrypt."
+    },
+    {
+      "id": "c2-usb",
+      "level": "easy",
+      "topic": "2 Data transmission",
       "q": "Why is USB described as a serial interface?",
-      "options": ["It transmits data one bit at a time", "It is slower than all other methods", "It sends data in only one direction", "It uses no cable"], "answer": 0,
-      "explain": "USB (Universal Serial Bus) sends data bit by bit down a wire, which avoids skew and works well over short and medium distances." },
-    { "id": "c2-typed-cipher", "level": "medium", "topic": "2 Data transmission", "type": "typed",
+      "options": [
+        "It transmits data one bit at a time",
+        "It is slower than all other methods",
+        "It sends data in only one direction",
+        "It uses no cable"
+      ],
+      "answer": 0,
+      "explain": "USB (Universal Serial Bus) sends data bit by bit down a wire, which avoids skew and works well over short and medium distances."
+    },
+    {
+      "id": "c2-typed-cipher",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "type": "typed",
       "q": "What is the name of encrypted data that cannot be read without a key? (one word)",
-      "accept": ["ciphertext", "cipher text", "cyphertext"],
-      "explain": "Plaintext goes through an encryption algorithm to become ciphertext." },
-
-    { "id": "c3-cpu", "level": "easy", "topic": "3 Hardware",
+      "accept": [
+        "ciphertext",
+        "cipher text",
+        "cyphertext"
+      ],
+      "explain": "Plaintext goes through an encryption algorithm to become ciphertext."
+    },
+    {
+      "id": "c2-trailer",
+      "level": "easy",
+      "topic": "2 Data transmission",
+      "q": "What is the purpose of the trailer in a data packet?",
+      "options": [
+        "To hold the destination address",
+        "To mark the end of the packet and include error checking data",
+        "To hold the actual data",
+        "To count the packets"
+      ],
+      "answer": 1,
+      "explain": "The trailer signals the end of the packet and often holds error-checking information."
+    },
+    {
+      "id": "c2-router",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "q": "What is the job of a router in packet switching?",
+      "options": [
+        "To store web pages",
+        "To convert domain names to IP addresses",
+        "To encrypt packets",
+        "To decide which route each packet takes to its destination"
+      ],
+      "answer": 3,
+      "explain": "Routers read the destination address in the packet header and send the packet along the best available path."
+    },
+    {
+      "id": "c2-simplex",
+      "level": "easy",
+      "topic": "2 Data transmission",
+      "q": "Which is an example of simplex transmission?",
+      "options": [
+        "A video call",
+        "A telephone call",
+        "Data from a keyboard to a computer",
+        "A walkie-talkie"
+      ],
+      "answer": 2,
+      "explain": "Simplex is one direction only. A keyboard sends data to the computer but never receives data from it."
+    },
+    {
+      "id": "c2-fullduplex",
+      "level": "easy",
+      "topic": "2 Data transmission",
+      "q": "Which type of transmission allows data to go both ways at the same time?",
+      "options": [
+        "Full-duplex",
+        "Simplex",
+        "Half-duplex",
+        "Serial only"
+      ],
+      "answer": 0,
+      "explain": "A phone call is full-duplex: both people can talk and listen at once."
+    },
+    {
+      "id": "c2-checkdigit",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "q": "What is a check digit used for?",
+      "options": [
+        "To encrypt a number",
+        "To detect errors in a number such as a barcode or ISBN",
+        "To count the digits",
+        "To compress data"
+      ],
+      "answer": 1,
+      "explain": "A check digit is calculated from the other digits. If the calculation differs after entry or transmission, there is an error."
+    },
+    {
+      "id": "c2-checksum",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "q": "How does a checksum work?",
+      "options": [
+        "It adds a parity bit to each byte",
+        "It resends the data back to the sender",
+        "A value calculated from the data is sent with it and recalculated by the receiver to compare",
+        "It compresses the data"
+      ],
+      "answer": 2,
+      "explain": "If the receiver's calculated checksum doesn't match the one sent, the data is corrupted and must be resent."
+    },
+    {
+      "id": "c2-parity-detect",
+      "level": "hard",
+      "topic": "2 Data transmission",
+      "q": "Which error can a single parity bit fail to detect?",
+      "options": [
+        "One bit changing",
+        "An odd number of bits changing",
+        "Two bits changing in the same byte",
+        "A byte that is missing completely"
+      ],
+      "answer": 2,
+      "explain": "If two bits change, the number of 1s still has the same parity, so the error goes unnoticed."
+    },
+    {
+      "id": "c2-usb-adv",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "q": "Which is an advantage of USB?",
+      "options": [
+        "It is much faster than every other connection",
+        "It can only connect one type of device",
+        "It needs a different cable for each device",
+        "Devices are detected automatically and the connector fits one way"
+      ],
+      "answer": 3,
+      "explain": "USB is a universal standard with automatic detection and a standard connector, but it has a limited cable length."
+    },
+    {
+      "id": "c2-symmetric-weak",
+      "level": "hard",
+      "topic": "2 Data transmission",
+      "q": "What is the main weakness of symmetric encryption?",
+      "options": [
+        "It is too slow to use",
+        "The key must be shared securely between sender and receiver",
+        "It uses two keys",
+        "It cannot encrypt text"
+      ],
+      "answer": 1,
+      "explain": "If the single key is intercepted when it is shared, anyone can decrypt the data."
+    },
+    {
+      "id": "c2-error-reason",
+      "level": "easy",
+      "topic": "2 Data transmission",
+      "q": "Which of these can cause data to be corrupted during transmission?",
+      "options": [
+        "Interference or electrical noise",
+        "Using binary",
+        "Using a header",
+        "Using a router"
+      ],
+      "answer": 0,
+      "explain": "Interference, loss of packets and skew can all cause errors in data."
+    },
+    {
+      "id": "c2-packet-order",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "q": "How does the receiving device know the correct order of packets?",
+      "options": [
+        "The packets always arrive in order",
+        "From the packet number in the header",
+        "From the size of each packet",
+        "By checking the trailer"
+      ],
+      "answer": 1,
+      "explain": "Each packet has a number in its header, and the packets are reassembled in that order."
+    },
+    {
+      "id": "c2-typed-simplex",
+      "level": "medium",
+      "topic": "2 Data transmission",
+      "type": "typed",
+      "q": "Which type of transmission sends data in one direction only? (one word)",
+      "accept": [
+        "simplex"
+      ],
+      "explain": "Simplex sends data in one direction only."
+    },
+    {
+      "id": "c3-cpu",
+      "level": "easy",
+      "topic": "3 Hardware",
       "q": "What does CPU stand for?",
-      "options": ["Central Processing Unit", "Computer Personal Unit", "Central Program Utility", "Control Processing Utility"], "answer": 0,
-      "explain": "The Central Processing Unit processes instructions and data." },
-    { "id": "c3-cycle", "level": "easy", "topic": "3 Hardware",
+      "options": [
+        "Central Processing Unit",
+        "Computer Personal Unit",
+        "Central Program Utility",
+        "Control Processing Utility"
+      ],
+      "answer": 0,
+      "explain": "The Central Processing Unit processes instructions and data."
+    },
+    {
+      "id": "c3-cycle",
+      "level": "easy",
+      "topic": "3 Hardware",
       "q": "What is the correct order of the fetch-decode-execute cycle?",
-      "options": ["Execute, fetch, decode", "Decode, fetch, execute", "Fetch, execute, decode", "Fetch, decode, execute"], "answer": 3,
-      "explain": "An instruction is fetched from memory, decoded by the control unit, then executed." },
-    { "id": "c3-pc", "level": "medium", "topic": "3 Hardware",
+      "options": [
+        "Execute, fetch, decode",
+        "Decode, fetch, execute",
+        "Fetch, execute, decode",
+        "Fetch, decode, execute"
+      ],
+      "answer": 3,
+      "explain": "An instruction is fetched from memory, decoded by the control unit, then executed."
+    },
+    {
+      "id": "c3-pc",
+      "level": "medium",
+      "topic": "3 Hardware",
       "q": "Which register holds the address of the next instruction to be fetched?",
-      "options": ["Memory Address Register (MAR)", "Program Counter (PC)", "Accumulator (ACC)", "Current Instruction Register (CIR)"], "answer": 1,
-      "explain": "The Program Counter holds the address of the next instruction and is incremented after each fetch." },
-    { "id": "c3-alu", "level": "easy", "topic": "3 Hardware",
+      "options": [
+        "Memory Address Register (MAR)",
+        "Program Counter (PC)",
+        "Accumulator (ACC)",
+        "Current Instruction Register (CIR)"
+      ],
+      "answer": 1,
+      "explain": "The Program Counter holds the address of the next instruction and is incremented after each fetch."
+    },
+    {
+      "id": "c3-alu",
+      "level": "easy",
+      "topic": "3 Hardware",
       "q": "Which part of the CPU carries out calculations and logical comparisons?",
-      "options": ["Control Unit", "Cache", "Arithmetic Logic Unit (ALU)", "Address bus"], "answer": 2,
-      "explain": "The ALU performs arithmetic (add, subtract) and logic (AND, OR, NOT, comparisons). The control unit manages the process." },
-    { "id": "c3-buses", "level": "medium", "topic": "3 Hardware",
+      "options": [
+        "Control Unit",
+        "Cache",
+        "Arithmetic Logic Unit (ALU)",
+        "Address bus"
+      ],
+      "answer": 2,
+      "explain": "The ALU performs arithmetic (add, subtract) and logic (AND, OR, NOT, comparisons). The control unit manages the process."
+    },
+    {
+      "id": "c3-buses",
+      "level": "medium",
+      "topic": "3 Hardware",
       "q": "Which bus carries the memory location that is going to be read from or written to?",
-      "options": ["Data bus", "Control bus", "Power bus", "Address bus"], "answer": 3,
-      "explain": "The address bus carries addresses one way (from CPU to memory). The data bus carries data both ways. The control bus carries control signals." },
-    { "id": "c3-performance", "level": "medium", "topic": "3 Hardware",
+      "options": [
+        "Data bus",
+        "Control bus",
+        "Power bus",
+        "Address bus"
+      ],
+      "answer": 3,
+      "explain": "The address bus carries addresses one way (from CPU to memory). The data bus carries data both ways. The control bus carries control signals."
+    },
+    {
+      "id": "c3-performance",
+      "level": "medium",
+      "topic": "3 Hardware",
       "q": "Which change would normally improve the performance of a CPU?",
-      "options": ["Fewer cores", "Smaller cache", "Lower clock speed", "More cores and a larger cache"], "answer": 3,
-      "explain": "More cores allow more instructions to be processed at once. A larger cache keeps more frequently used data close to the CPU. A higher clock speed also helps." },
-    { "id": "c3-ram-rom", "level": "easy", "topic": "3 Hardware",
+      "options": [
+        "Fewer cores",
+        "Smaller cache",
+        "Lower clock speed",
+        "More cores and a larger cache"
+      ],
+      "answer": 3,
+      "explain": "More cores allow more instructions to be processed at once. A larger cache keeps more frequently used data close to the CPU. A higher clock speed also helps."
+    },
+    {
+      "id": "c3-ram-rom",
+      "level": "easy",
+      "topic": "3 Hardware",
       "q": "Which statement about ROM is correct?",
-      "options": ["It loses its contents when switched off", "It is non-volatile and often stores the start-up instructions", "It is used to store the user's open documents", "It is faster than cache"], "answer": 1,
-      "explain": "ROM is non-volatile. It keeps its contents without power and holds the bootstrap. RAM is volatile." },
-    { "id": "c3-ssd", "level": "medium", "topic": "3 Hardware",
+      "options": [
+        "It loses its contents when switched off",
+        "It is non-volatile and often stores the start-up instructions",
+        "It is used to store the user's open documents",
+        "It is faster than cache"
+      ],
+      "answer": 1,
+      "explain": "ROM is non-volatile. It keeps its contents without power and holds the bootstrap. RAM is volatile."
+    },
+    {
+      "id": "c3-ssd",
+      "level": "medium",
+      "topic": "3 Hardware",
       "q": "Which is an advantage of an SSD compared with a magnetic hard disk drive?",
-      "options": ["It is cheaper per gigabyte", "It has no moving parts so it is faster and more durable", "It can be written to an unlimited number of times", "It uses a laser to read data"], "answer": 1,
-      "explain": "An SSD uses flash memory with no moving parts. It is quieter, faster and more shock resistant, but costs more per GB." },
-    { "id": "c3-virtual", "level": "hard", "topic": "3 Hardware",
+      "options": [
+        "It is cheaper per gigabyte",
+        "It has no moving parts so it is faster and more durable",
+        "It can be written to an unlimited number of times",
+        "It uses a laser to read data"
+      ],
+      "answer": 1,
+      "explain": "An SSD uses flash memory with no moving parts. It is quieter, faster and more shock resistant, but costs more per GB."
+    },
+    {
+      "id": "c3-virtual",
+      "level": "hard",
+      "topic": "3 Hardware",
       "q": "When is virtual memory used?",
-      "options": ["When the RAM is full, so part of the secondary storage is used as extra RAM", "When the cache is empty", "When the computer is switched off", "To increase the clock speed"], "answer": 0,
-      "explain": "Virtual memory moves pages of data from RAM to secondary storage when RAM is full. It is much slower than real RAM." },
-    { "id": "c3-mac", "level": "medium", "topic": "3 Hardware",
+      "options": [
+        "When the RAM is full, so part of the secondary storage is used as extra RAM",
+        "When the cache is empty",
+        "When the computer is switched off",
+        "To increase the clock speed"
+      ],
+      "answer": 0,
+      "explain": "Virtual memory moves pages of data from RAM to secondary storage when RAM is full. It is much slower than real RAM."
+    },
+    {
+      "id": "c3-mac",
+      "level": "medium",
+      "topic": "3 Hardware",
       "q": "Which statement about a MAC address is correct?",
-      "options": ["It is assigned by the router and changes each time", "It is a unique hardware address of a network interface card, set by the manufacturer", "It is the same as the IP address", "It is used only on the internet"], "answer": 1,
-      "explain": "A MAC address identifies the network interface card. An IP address is assigned by the network and can change." },
-    { "id": "c3-and", "level": "easy", "topic": "3 Hardware",
+      "options": [
+        "It is assigned by the router and changes each time",
+        "It is a unique hardware address of a network interface card, set by the manufacturer",
+        "It is the same as the IP address",
+        "It is used only on the internet"
+      ],
+      "answer": 1,
+      "explain": "A MAC address identifies the network interface card. An IP address is assigned by the network and can change."
+    },
+    {
+      "id": "c3-and",
+      "level": "easy",
+      "topic": "3 Hardware",
       "q": "A two-input AND gate gives an output of 1. What must the inputs be?",
-      "options": ["Both 0", "One 1 and one 0", "Both 1", "Either input can be 1"], "answer": 2,
-      "explain": "AND outputs 1 only when both inputs are 1." },
-    { "id": "c3-xor", "level": "hard", "topic": "3 Hardware",
+      "options": [
+        "Both 0",
+        "One 1 and one 0",
+        "Both 1",
+        "Either input can be 1"
+      ],
+      "answer": 2,
+      "explain": "AND outputs 1 only when both inputs are 1."
+    },
+    {
+      "id": "c3-xor",
+      "level": "hard",
+      "topic": "3 Hardware",
       "q": "For which pair of inputs does an XOR gate output 1?",
-      "options": ["1 and 1", "0 and 0", "Both of those", "0 and 1"], "answer": 3,
-      "explain": "XOR outputs 1 only when the inputs are different." },
-    { "id": "c3-typed-ram", "level": "medium", "topic": "3 Hardware", "type": "typed",
+      "options": [
+        "1 and 1",
+        "0 and 0",
+        "Both of those",
+        "0 and 1"
+      ],
+      "answer": 3,
+      "explain": "XOR outputs 1 only when the inputs are different."
+    },
+    {
+      "id": "c3-typed-ram",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "type": "typed",
       "q": "Memory that loses its contents when the power is switched off is described as what? (volatile / non-volatile)",
-      "accept": ["volatile"],
-      "explain": "RAM is volatile: it loses its contents when power is lost. ROM and secondary storage are non-volatile." },
-
-    { "id": "c4-system-app", "level": "easy", "topic": "4 Software",
+      "accept": [
+        "volatile"
+      ],
+      "explain": "RAM is volatile: it loses its contents when power is lost. ROM and secondary storage are non-volatile."
+    },
+    {
+      "id": "c3-mar",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which register stores the address in memory that is about to be read from or written to?",
+      "options": [
+        "Program Counter",
+        "Accumulator",
+        "Memory Address Register (MAR)",
+        "Current Instruction Register"
+      ],
+      "answer": 2,
+      "explain": "The MAR holds the address being accessed. The MDR holds the data fetched or about to be written."
+    },
+    {
+      "id": "c3-acc",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which register holds the results of calculations from the ALU?",
+      "options": [
+        "MAR",
+        "Accumulator (ACC)",
+        "PC",
+        "MDR"
+      ],
+      "answer": 1,
+      "explain": "The accumulator temporarily stores the results of arithmetic and logic operations."
+    },
+    {
+      "id": "c3-cu",
+      "level": "easy",
+      "topic": "3 Hardware",
+      "q": "Which part of the CPU decodes instructions and coordinates the other parts?",
+      "options": [
+        "ALU",
+        "RAM",
+        "Control Unit",
+        "Cache"
+      ],
+      "answer": 2,
+      "explain": "The control unit decodes each instruction and sends control signals to the other components."
+    },
+    {
+      "id": "c3-vonneumann",
+      "level": "hard",
+      "topic": "3 Hardware",
+      "q": "In the Von Neumann architecture, what is stored together in the same memory?",
+      "options": [
+        "Only data",
+        "Only the operating system",
+        "Only instructions",
+        "Instructions and data"
+      ],
+      "answer": 3,
+      "explain": "The stored-program concept: both program instructions and the data they use are held in main memory."
+    },
+    {
+      "id": "c3-embedded",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which of these is an example of an embedded system?",
+      "options": [
+        "A laptop",
+        "A washing machine controller",
+        "A desktop PC",
+        "A games console that runs many apps"
+      ],
+      "answer": 1,
+      "explain": "An embedded system is a computer built into a device for one dedicated purpose, e.g. a washing machine or a microwave."
+    },
+    {
+      "id": "c3-cache",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Why does a CPU have cache memory?",
+      "options": [
+        "To store files permanently",
+        "To hold the operating system",
+        "To store frequently used data and instructions close to the CPU for faster access",
+        "To replace RAM"
+      ],
+      "answer": 2,
+      "explain": "Cache is very fast memory. Accessing data from cache is quicker than going to RAM."
+    },
+    {
+      "id": "c3-biometric-sensor",
+      "level": "easy",
+      "topic": "3 Hardware",
+      "q": "Which input device would a smartphone use to detect a fingerprint?",
+      "options": [
+        "Microphone",
+        "Biometric sensor",
+        "Speaker",
+        "Printer"
+      ],
+      "answer": 1,
+      "explain": "A fingerprint scanner is a biometric sensor, used to identify the user."
+    },
+    {
+      "id": "c3-printer",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which printer works by spraying tiny droplets of ink onto the paper?",
+      "options": [
+        "Laser printer",
+        "3D printer",
+        "Inkjet printer",
+        "Dot matrix printer"
+      ],
+      "answer": 2,
+      "explain": "Inkjet printers fire droplets of ink. Laser printers use toner and a laser."
+    },
+    {
+      "id": "c3-optical",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which of these is an optical storage device?",
+      "options": [
+        "CD",
+        "SSD",
+        "USB flash drive",
+        "Hard disk drive"
+      ],
+      "answer": 0,
+      "explain": "Optical media such as CD, DVD and Blu-ray use a laser to read pits and lands."
+    },
+    {
+      "id": "c3-ip-change",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which address can change depending on the network the device is connected to?",
+      "options": [
+        "MAC address",
+        "IP address",
+        "Serial number",
+        "Barcode"
+      ],
+      "answer": 1,
+      "explain": "IP addresses are assigned by the network and can change. MAC addresses are fixed by the manufacturer."
+    },
+    {
+      "id": "c3-or",
+      "level": "easy",
+      "topic": "3 Hardware",
+      "q": "A two-input OR gate gives an output of 0. What must the inputs be?",
+      "options": [
+        "Both 1",
+        "One 1 and one 0",
+        "Either could be 1",
+        "Both 0"
+      ],
+      "answer": 3,
+      "explain": "OR outputs 1 when at least one input is 1. It only outputs 0 when both inputs are 0."
+    },
+    {
+      "id": "c3-not",
+      "level": "easy",
+      "topic": "3 Hardware",
+      "q": "What does a NOT gate do?",
+      "options": [
+        "Outputs 1 for any input",
+        "Outputs the opposite of the input",
+        "Outputs the same as the input",
+        "Outputs 0 for any input"
+      ],
+      "answer": 1,
+      "explain": "A NOT gate inverts its input: 0 becomes 1 and 1 becomes 0."
+    },
+    {
+      "id": "c3-nand",
+      "level": "hard",
+      "topic": "3 Hardware",
+      "q": "For which input pair does a NAND gate output 0?",
+      "options": [
+        "0 and 0",
+        "0 and 1",
+        "1 and 1",
+        "1 and 0"
+      ],
+      "answer": 2,
+      "explain": "NAND is NOT AND, so it outputs 0 only when both inputs are 1."
+    },
+    {
+      "id": "c3-cloud-dis",
+      "level": "medium",
+      "topic": "3 Hardware",
+      "q": "Which is a disadvantage of cloud storage?",
+      "options": [
+        "Files can be accessed from anywhere",
+        "Files are backed up by the provider",
+        "It needs an internet connection to access the files",
+        "The user does not have to buy storage devices"
+      ],
+      "answer": 2,
+      "explain": "Cloud storage depends on internet access and trusting the provider with security and privacy."
+    },
+    {
+      "id": "c3-typed-alu",
+      "level": "easy",
+      "topic": "3 Hardware",
+      "type": "typed",
+      "q": "What is the 3-letter abbreviation for the part of the CPU that does arithmetic and logic?",
+      "accept": [
+        "ALU"
+      ],
+      "explain": "The Arithmetic Logic Unit (ALU) carries out calculations and logical comparisons."
+    },
+    {
+      "id": "c4-system-app",
+      "level": "easy",
+      "topic": "4 Software",
       "q": "Which of these is system software?",
-      "options": ["Word processor", "Spreadsheet", "Web browser", "Operating system"], "answer": 3,
-      "explain": "System software runs and manages the computer (operating system, utilities, drivers). The others are application software." },
-    { "id": "c4-os", "level": "easy", "topic": "4 Software",
+      "options": [
+        "Word processor",
+        "Spreadsheet",
+        "Web browser",
+        "Operating system"
+      ],
+      "answer": 3,
+      "explain": "System software runs and manages the computer (operating system, utilities, drivers). The others are application software."
+    },
+    {
+      "id": "c4-os",
+      "level": "easy",
+      "topic": "4 Software",
       "q": "Which of these is a job of the operating system?",
-      "options": ["Managing memory and files", "Designing web pages", "Writing documents", "Editing photographs"], "answer": 0,
-      "explain": "The operating system manages memory, files, devices, multitasking, security and the user interface." },
-    { "id": "c4-interrupt", "level": "medium", "topic": "4 Software",
+      "options": [
+        "Managing memory and files",
+        "Designing web pages",
+        "Writing documents",
+        "Editing photographs"
+      ],
+      "answer": 0,
+      "explain": "The operating system manages memory, files, devices, multitasking, security and the user interface."
+    },
+    {
+      "id": "c4-interrupt",
+      "level": "medium",
+      "topic": "4 Software",
       "q": "What is an interrupt?",
-      "options": ["A virus that stops the computer", "A signal to the processor that something needs attention immediately", "A type of memory", "A fault in the hardware that cannot be fixed"], "answer": 1,
-      "explain": "An interrupt is a signal from a device or program asking the CPU to pause its current task and deal with something more urgent." },
-    { "id": "c4-high-low", "level": "easy", "topic": "4 Software",
+      "options": [
+        "A virus that stops the computer",
+        "A signal to the processor that something needs attention immediately",
+        "A type of memory",
+        "A fault in the hardware that cannot be fixed"
+      ],
+      "answer": 1,
+      "explain": "An interrupt is a signal from a device or program asking the CPU to pause its current task and deal with something more urgent."
+    },
+    {
+      "id": "c4-high-low",
+      "level": "easy",
+      "topic": "4 Software",
       "q": "Which statement about high-level languages is correct?",
-      "options": ["They are written in binary", "They depend on the specific processor", "They are easier for humans to read and write, and need translating", "They run directly without translation"], "answer": 2,
-      "explain": "High-level languages are close to English and portable, but must be compiled or interpreted into machine code." },
-    { "id": "c4-compiler", "level": "medium", "topic": "4 Software",
+      "options": [
+        "They are written in binary",
+        "They depend on the specific processor",
+        "They are easier for humans to read and write, and need translating",
+        "They run directly without translation"
+      ],
+      "answer": 2,
+      "explain": "High-level languages are close to English and portable, but must be compiled or interpreted into machine code."
+    },
+    {
+      "id": "c4-compiler",
+      "level": "medium",
+      "topic": "4 Software",
       "q": "What is the main difference between a compiler and an interpreter?",
-      "options": ["A compiler translates the whole program at once, an interpreter translates and runs it line by line", "A compiler only works for assembly code", "An interpreter produces an executable file, a compiler does not", "There is no difference"], "answer": 0,
-      "explain": "A compiler produces an executable of the whole program and reports all errors at the end. An interpreter executes one line at a time and stops at the first error." },
-    { "id": "c4-assembler", "level": "medium", "topic": "4 Software",
+      "options": [
+        "A compiler translates the whole program at once, an interpreter translates and runs it line by line",
+        "A compiler only works for assembly code",
+        "An interpreter produces an executable file, a compiler does not",
+        "There is no difference"
+      ],
+      "answer": 0,
+      "explain": "A compiler produces an executable of the whole program and reports all errors at the end. An interpreter executes one line at a time and stops at the first error."
+    },
+    {
+      "id": "c4-assembler",
+      "level": "medium",
+      "topic": "4 Software",
       "q": "Which translator converts assembly language into machine code?",
-      "options": ["Compiler", "Interpreter", "Linker", "Assembler"], "answer": 3,
-      "explain": "An assembler translates assembly language mnemonics into machine code." },
-    { "id": "c4-ide", "level": "medium", "topic": "4 Software",
+      "options": [
+        "Compiler",
+        "Interpreter",
+        "Linker",
+        "Assembler"
+      ],
+      "answer": 3,
+      "explain": "An assembler translates assembly language mnemonics into machine code."
+    },
+    {
+      "id": "c4-ide",
+      "level": "medium",
+      "topic": "4 Software",
       "q": "Which of these is a typical feature of an IDE?",
-      "options": ["Firewall and spam filter", "Breakpoints, a debugger and syntax highlighting", "Disk defragmentation", "Antivirus scanning"], "answer": 1,
-      "explain": "An Integrated Development Environment helps programmers with a code editor, a translator, a debugger, breakpoints, a variable watch and error diagnostics." },
-    { "id": "c4-utility", "level": "easy", "topic": "4 Software",
+      "options": [
+        "Firewall and spam filter",
+        "Breakpoints, a debugger and syntax highlighting",
+        "Disk defragmentation",
+        "Antivirus scanning"
+      ],
+      "answer": 1,
+      "explain": "An Integrated Development Environment helps programmers with a code editor, a translator, a debugger, breakpoints, a variable watch and error diagnostics."
+    },
+    {
+      "id": "c4-utility",
+      "level": "easy",
+      "topic": "4 Software",
       "q": "Which utility software finds and removes malware?",
-      "options": ["Disk formatter", "Defragmenter", "Compression software", "Anti-virus"], "answer": 3,
-      "explain": "Anti-virus software scans files and removes or quarantines malware." },
-    { "id": "c4-defrag", "level": "hard", "topic": "4 Software",
+      "options": [
+        "Disk formatter",
+        "Defragmenter",
+        "Compression software",
+        "Anti-virus"
+      ],
+      "answer": 3,
+      "explain": "Anti-virus software scans files and removes or quarantines malware."
+    },
+    {
+      "id": "c4-defrag",
+      "level": "hard",
+      "topic": "4 Software",
       "q": "What does disk defragmentation do on a magnetic hard disk?",
-      "options": ["Deletes unwanted files", "Rearranges file parts so they are stored together in contiguous sectors", "Compresses files to save space", "Encrypts the disk"], "answer": 1,
-      "explain": "Files get split across the disk over time. Defragmentation puts the pieces next to each other, so the read head moves less." },
-    { "id": "c4-lowlevel", "level": "hard", "topic": "4 Software",
+      "options": [
+        "Deletes unwanted files",
+        "Rearranges file parts so they are stored together in contiguous sectors",
+        "Compresses files to save space",
+        "Encrypts the disk"
+      ],
+      "answer": 1,
+      "explain": "Files get split across the disk over time. Defragmentation puts the pieces next to each other, so the read head moves less."
+    },
+    {
+      "id": "c4-lowlevel",
+      "level": "hard",
+      "topic": "4 Software",
       "q": "Why might a programmer choose a low-level language?",
-      "options": ["To make the program portable to all computers", "To make the program easy to read", "To control hardware directly and make efficient use of memory", "To avoid the need for any translator"], "answer": 2,
-      "explain": "Low-level languages give direct control of the hardware and memory. They are used for device drivers and embedded systems, but are harder to write and not portable." },
-    { "id": "c4-typed-os", "level": "easy", "topic": "4 Software", "type": "typed",
+      "options": [
+        "To make the program portable to all computers",
+        "To make the program easy to read",
+        "To control hardware directly and make efficient use of memory",
+        "To avoid the need for any translator"
+      ],
+      "answer": 2,
+      "explain": "Low-level languages give direct control of the hardware and memory. They are used for device drivers and embedded systems, but are harder to write and not portable."
+    },
+    {
+      "id": "c4-typed-os",
+      "level": "easy",
+      "topic": "4 Software",
+      "type": "typed",
       "q": "What does OS stand for? (two words)",
-      "accept": ["operating system"],
-      "explain": "OS = Operating System." },
-
-    { "id": "c5-www", "level": "easy", "topic": "5 The internet and its uses",
+      "accept": [
+        "operating system"
+      ],
+      "explain": "OS = Operating System."
+    },
+    {
+      "id": "c4-app",
+      "level": "easy",
+      "topic": "4 Software",
+      "q": "Which of these is application software?",
+      "options": [
+        "Device driver",
+        "Operating system",
+        "Anti-virus utility",
+        "Spreadsheet"
+      ],
+      "answer": 3,
+      "explain": "Application software lets users do tasks such as word processing or calculations. System software runs the computer."
+    },
+    {
+      "id": "c4-gui",
+      "level": "easy",
+      "topic": "4 Software",
+      "q": "What does GUI stand for?",
+      "options": [
+        "Graphical User Interface",
+        "General User Input",
+        "Graphic Utility Instruction",
+        "Group User Interface"
+      ],
+      "answer": 0,
+      "explain": "A GUI lets the user interact using windows, icons, menus and pointers."
+    },
+    {
+      "id": "c4-cli",
+      "level": "medium",
+      "topic": "4 Software",
+      "q": "Which interface requires the user to type commands?",
+      "options": [
+        "GUI",
+        "Touch screen",
+        "Command line interface",
+        "Voice interface"
+      ],
+      "answer": 2,
+      "explain": "A command line interface needs the user to know and type commands. It gives more control but is harder to learn."
+    },
+    {
+      "id": "c4-driver",
+      "level": "medium",
+      "topic": "4 Software",
+      "q": "What is the purpose of a device driver?",
+      "options": [
+        "To protect from viruses",
+        "To let the operating system communicate with a hardware device",
+        "To compress files",
+        "To translate high-level code"
+      ],
+      "answer": 1,
+      "explain": "A driver tells the OS how to control a particular device such as a printer."
+    },
+    {
+      "id": "c4-multitask",
+      "level": "medium",
+      "topic": "4 Software",
+      "q": "What does multitasking mean in an operating system?",
+      "options": [
+        "Using several users at once",
+        "Having multiple screens",
+        "Running more than one program at the same time by sharing CPU time",
+        "Having several types of memory"
+      ],
+      "answer": 2,
+      "explain": "The OS switches rapidly between programs so they appear to run at once."
+    },
+    {
+      "id": "c4-compress",
+      "level": "medium",
+      "topic": "4 Software",
+      "q": "What is the purpose of compression software?",
+      "options": [
+        "To remove viruses",
+        "To reduce file size so it uses less storage or transmits faster",
+        "To increase the file size",
+        "To encrypt the file"
+      ],
+      "answer": 1,
+      "explain": "Compression utilities reduce file size for storage and transmission."
+    },
+    {
+      "id": "c4-firmware",
+      "level": "hard",
+      "topic": "4 Software",
+      "q": "What is firmware?",
+      "options": [
+        "Software that is stored in non-volatile memory on a device and controls its hardware",
+        "A type of virus",
+        "Application software that runs in a browser",
+        "The physical parts of a computer"
+      ],
+      "answer": 0,
+      "explain": "Firmware is stored permanently in ROM or flash memory. The bootloader is a common example."
+    },
+    {
+      "id": "c4-mnemonic",
+      "level": "medium",
+      "topic": "4 Software",
+      "q": "What is a mnemonic in assembly language?",
+      "options": [
+        "A binary number",
+        "A short text code that represents an instruction, such as ADD or LDA",
+        "A type of variable",
+        "An error message"
+      ],
+      "answer": 1,
+      "explain": "Mnemonics are easier for humans to remember than binary opcodes."
+    },
+    {
+      "id": "c4-comp-adv",
+      "level": "hard",
+      "topic": "4 Software",
+      "q": "Which is an advantage of a compiler over an interpreter?",
+      "options": [
+        "Errors are reported one line at a time",
+        "It is easier to debug during development",
+        "The program can be run without the compiler and runs faster",
+        "The source code is needed every time to run it"
+      ],
+      "answer": 2,
+      "explain": "A compiled executable runs without the compiler, and it runs faster. An interpreter is better for development and testing."
+    },
+    {
+      "id": "c4-security",
+      "level": "medium",
+      "topic": "4 Software",
+      "q": "Which OS feature helps to protect data from unauthorised users?",
+      "options": [
+        "Defragmentation",
+        "Screen saver",
+        "Disk formatting",
+        "User accounts and passwords"
+      ],
+      "answer": 3,
+      "explain": "The OS provides user accounts, passwords and access rights to control who can see or change files."
+    },
+    {
+      "id": "c4-lang",
+      "level": "easy",
+      "topic": "4 Software",
+      "q": "Which of these is a high-level language?",
+      "options": [
+        "Machine code",
+        "Python",
+        "Assembly language",
+        "Binary"
+      ],
+      "answer": 1,
+      "explain": "Python is a high-level language. Machine code and assembly are low-level."
+    },
+    {
+      "id": "c4-typed-gui",
+      "level": "easy",
+      "topic": "4 Software",
+      "type": "typed",
+      "q": "What does the first G in GUI stand for? (one word)",
+      "accept": [
+        "graphical",
+        "graphic"
+      ],
+      "explain": "GUI = Graphical User Interface."
+    },
+    {
+      "id": "c5-www",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
       "q": "What is the difference between the internet and the World Wide Web?",
-      "options": ["They are the same thing", "The internet is the network infrastructure, the WWW is the collection of web pages accessed through it", "The WWW is the hardware, the internet is the software", "The internet only carries email"], "answer": 1,
-      "explain": "The internet is the global network of networks. The World Wide Web is a service that runs on it and consists of websites and pages." },
-    { "id": "c5-url", "level": "easy", "topic": "5 The internet and its uses",
+      "options": [
+        "They are the same thing",
+        "The internet is the network infrastructure, the WWW is the collection of web pages accessed through it",
+        "The WWW is the hardware, the internet is the software",
+        "The internet only carries email"
+      ],
+      "answer": 1,
+      "explain": "The internet is the global network of networks. The World Wide Web is a service that runs on it and consists of websites and pages."
+    },
+    {
+      "id": "c5-url",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
       "q": "What does a web browser do?",
-      "options": ["Converts domain names to IP addresses", "Stores web pages on the server", "Protects the network from hackers", "Renders HTML and displays web pages"], "answer": 3,
-      "explain": "A browser requests web pages and displays them by rendering the HTML. The DNS converts domain names to IP addresses." },
-    { "id": "c5-dns", "level": "medium", "topic": "5 The internet and its uses",
+      "options": [
+        "Converts domain names to IP addresses",
+        "Stores web pages on the server",
+        "Protects the network from hackers",
+        "Renders HTML and displays web pages"
+      ],
+      "answer": 3,
+      "explain": "A browser requests web pages and displays them by rendering the HTML. The DNS converts domain names to IP addresses."
+    },
+    {
+      "id": "c5-dns",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
       "q": "What does the Domain Name System (DNS) do?",
-      "options": ["Translates a domain name into an IP address", "Encrypts web traffic", "Blocks unauthorised access", "Stores cookies"], "answer": 0,
-      "explain": "DNS servers hold a database that maps domain names (e.g. www.example.com) to IP addresses." },
-    { "id": "c5-https", "level": "medium", "topic": "5 The internet and its uses",
+      "options": [
+        "Translates a domain name into an IP address",
+        "Encrypts web traffic",
+        "Blocks unauthorised access",
+        "Stores cookies"
+      ],
+      "answer": 0,
+      "explain": "DNS servers hold a database that maps domain names (e.g. www.example.com) to IP addresses."
+    },
+    {
+      "id": "c5-https",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
       "q": "What is the main benefit of HTTPS over HTTP?",
-      "options": ["Web pages load faster", "Data is encrypted using SSL/TLS", "It removes advertisements", "It needs no web server"], "answer": 1,
-      "explain": "HTTPS uses SSL/TLS to encrypt data between the browser and the server, so it cannot easily be read if intercepted." },
-    { "id": "c5-cookies", "level": "medium", "topic": "5 The internet and its uses",
+      "options": [
+        "Web pages load faster",
+        "Data is encrypted using SSL/TLS",
+        "It removes advertisements",
+        "It needs no web server"
+      ],
+      "answer": 1,
+      "explain": "HTTPS uses SSL/TLS to encrypt data between the browser and the server, so it cannot easily be read if intercepted."
+    },
+    {
+      "id": "c5-cookies",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
       "q": "Which of these is a use of session cookies?",
-      "options": ["Storing a user's items in an online shopping basket during a visit", "Keeping a user's login for a year", "Infecting the computer with a virus", "Storing the browser's history permanently"], "answer": 0,
-      "explain": "Session cookies exist only while the browser is open, e.g. a shopping basket. Persistent cookies stay after the browser is closed." },
-    { "id": "c5-phishing", "level": "medium", "topic": "5 The internet and its uses",
+      "options": [
+        "Storing a user's items in an online shopping basket during a visit",
+        "Keeping a user's login for a year",
+        "Infecting the computer with a virus",
+        "Storing the browser's history permanently"
+      ],
+      "answer": 0,
+      "explain": "Session cookies exist only while the browser is open, e.g. a shopping basket. Persistent cookies stay after the browser is closed."
+    },
+    {
+      "id": "c5-phishing",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
       "q": "An email pretending to be from a bank asks you to click a link and enter your password. What is this?",
-      "options": ["Pharming", "A DDoS attack", "Phishing", "A brute-force attack"], "answer": 2,
-      "explain": "Phishing uses fake emails to trick users into giving away personal details. Pharming redirects users to a fake website without them clicking a link in an email." },
-    { "id": "c5-ddos", "level": "medium", "topic": "5 The internet and its uses",
+      "options": [
+        "Pharming",
+        "A DDoS attack",
+        "Phishing",
+        "A brute-force attack"
+      ],
+      "answer": 2,
+      "explain": "Phishing uses fake emails to trick users into giving away personal details. Pharming redirects users to a fake website without them clicking a link in an email."
+    },
+    {
+      "id": "c5-ddos",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
       "q": "What is the aim of a Distributed Denial of Service (DDoS) attack?",
-      "options": ["To steal a user's password", "To flood a server with requests so it cannot serve real users", "To install spyware silently", "To guess an encryption key"], "answer": 1,
-      "explain": "Many computers (often a botnet) send huge numbers of requests until the server is overwhelmed and legitimate users are denied service." },
-    { "id": "c5-malware", "level": "medium", "topic": "5 The internet and its uses",
+      "options": [
+        "To steal a user's password",
+        "To flood a server with requests so it cannot serve real users",
+        "To install spyware silently",
+        "To guess an encryption key"
+      ],
+      "answer": 1,
+      "explain": "Many computers (often a botnet) send huge numbers of requests until the server is overwhelmed and legitimate users are denied service."
+    },
+    {
+      "id": "c5-malware",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
       "q": "Which malware locks a user's files and demands payment to unlock them?",
-      "options": ["Spyware", "Worm", "Adware", "Ransomware"], "answer": 3,
-      "explain": "Ransomware encrypts the user's data and demands a ransom for the key." },
-    { "id": "c5-firewall", "level": "easy", "topic": "5 The internet and its uses",
+      "options": [
+        "Spyware",
+        "Worm",
+        "Adware",
+        "Ransomware"
+      ],
+      "answer": 3,
+      "explain": "Ransomware encrypts the user's data and demands a ransom for the key."
+    },
+    {
+      "id": "c5-firewall",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
       "q": "What does a firewall do?",
-      "options": ["Speeds up the internet connection", "Monitors incoming and outgoing traffic and blocks anything that breaks the rules", "Repairs corrupted files", "Stores backups"], "answer": 1,
-      "explain": "A firewall examines network traffic against a set of criteria and blocks unauthorised access." },
-    { "id": "c5-digcert", "level": "hard", "topic": "5 The internet and its uses",
+      "options": [
+        "Speeds up the internet connection",
+        "Monitors incoming and outgoing traffic and blocks anything that breaks the rules",
+        "Repairs corrupted files",
+        "Stores backups"
+      ],
+      "answer": 1,
+      "explain": "A firewall examines network traffic against a set of criteria and blocks unauthorised access."
+    },
+    {
+      "id": "c5-digcert",
+      "level": "hard",
+      "topic": "5 The internet and its uses",
       "q": "What is the purpose of a digital certificate on a website?",
-      "options": ["To speed up loading", "To store the user's cookies", "To prove the website is genuine and provide its public key", "To block pop-ups"], "answer": 2,
-      "explain": "A digital certificate, issued by a certificate authority, shows that the website's owner is verified and holds the public key used for SSL/TLS." },
-    { "id": "c5-blockchain", "level": "hard", "topic": "5 The internet and its uses",
+      "options": [
+        "To speed up loading",
+        "To store the user's cookies",
+        "To prove the website is genuine and provide its public key",
+        "To block pop-ups"
+      ],
+      "answer": 2,
+      "explain": "A digital certificate, issued by a certificate authority, shows that the website's owner is verified and holds the public key used for SSL/TLS."
+    },
+    {
+      "id": "c5-blockchain",
+      "level": "hard",
+      "topic": "5 The internet and its uses",
       "q": "Which of these describes a blockchain?",
-      "options": ["A list of blocked websites", "A type of firewall", "A backup stored on one central server", "A digital ledger of transactions where each block is linked to the previous one"], "answer": 3,
-      "explain": "Each block holds transactions and the hash of the previous block, so past records are hard to alter. It underpins cryptocurrencies." },
-    { "id": "c5-typed-ip", "level": "easy", "topic": "5 The internet and its uses", "type": "typed",
+      "options": [
+        "A list of blocked websites",
+        "A type of firewall",
+        "A backup stored on one central server",
+        "A digital ledger of transactions where each block is linked to the previous one"
+      ],
+      "answer": 3,
+      "explain": "Each block holds transactions and the hash of the previous block, so past records are hard to alter. It underpins cryptocurrencies."
+    },
+    {
+      "id": "c5-typed-ip",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
+      "type": "typed",
       "q": "In an \"IP address\", what does the P stand for? (one word)",
-      "accept": ["protocol"],
-      "explain": "IP = Internet Protocol." },
-
-    { "id": "c6-automated", "level": "easy", "topic": "6 Automated and emerging technologies",
+      "accept": [
+        "protocol"
+      ],
+      "explain": "IP = Internet Protocol."
+    },
+    {
+      "id": "c5-isp",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
+      "q": "What is an ISP?",
+      "options": [
+        "A company that provides access to the internet",
+        "A type of virus",
+        "A website address",
+        "A programming language"
+      ],
+      "answer": 0,
+      "explain": "An Internet Service Provider connects users to the internet."
+    },
+    {
+      "id": "c5-ipv4",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "Which of these is an IPv4 address format?",
+      "options": [
+        "192.168.1.10",
+        "www.example.com",
+        "AB:CD:EF:12:34:56",
+        "http://example"
+      ],
+      "answer": 0,
+      "explain": "IPv4 addresses are four numbers (0-255) separated by dots. The AB:CD style is a MAC address."
+    },
+    {
+      "id": "c5-html",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
+      "q": "What is HTML used for?",
+      "options": [
+        "Translating domain names",
+        "Encrypting data",
+        "Structuring and displaying web pages",
+        "Storing cookies"
+      ],
+      "answer": 2,
+      "explain": "HyperText Markup Language defines the structure and content of web pages."
+    },
+    {
+      "id": "c5-persistent",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "Which is a use of persistent cookies?",
+      "options": [
+        "Holding items in a shopping basket for one visit",
+        "Remembering login details between visits",
+        "Blocking viruses",
+        "Speeding up the processor"
+      ],
+      "answer": 1,
+      "explain": "Persistent cookies remain after the browser is closed, so a site can recognise returning users."
+    },
+    {
+      "id": "c5-pharming",
+      "level": "hard",
+      "topic": "5 The internet and its uses",
+      "q": "How is pharming different from phishing?",
+      "options": [
+        "Pharming uses emails only",
+        "Pharming uses USB sticks",
+        "They are the same",
+        "Malicious code redirects the user to a fake website even when they type the correct address"
+      ],
+      "answer": 3,
+      "explain": "Pharming changes DNS or host settings so users are redirected to a fake website without clicking a link."
+    },
+    {
+      "id": "c5-virus",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "What is the main feature of a computer virus?",
+      "options": [
+        "It attaches itself to files and spreads when they are run or shared",
+        "It only spies on the user",
+        "It locks files",
+        "It does not need a host file"
+      ],
+      "answer": 0,
+      "explain": "A virus needs a host file and can replicate. Worms spread by themselves through networks."
+    },
+    {
+      "id": "c5-spyware",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "Which malware secretly records what the user types and sends it to someone else?",
+      "options": [
+        "Adware",
+        "Worm",
+        "Spyware",
+        "Firewall"
+      ],
+      "answer": 2,
+      "explain": "Spyware, such as a keylogger, captures keystrokes to steal passwords and other data."
+    },
+    {
+      "id": "c5-bruteforce",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "What is a brute-force attack?",
+      "options": [
+        "Flooding a server with traffic",
+        "Trying many possible passwords or keys until the right one is found",
+        "Tricking a user with an email",
+        "Redirecting to a fake site"
+      ],
+      "answer": 1,
+      "explain": "A brute-force attack tries every possible combination. Longer, more complex passwords take much longer to crack."
+    },
+    {
+      "id": "c5-strongpass",
+      "level": "easy",
+      "topic": "5 The internet and its uses",
+      "q": "Which password is the strongest?",
+      "options": [
+        "password",
+        "12345678",
+        "Ali2010",
+        "T7#kLm9$qP2z"
+      ],
+      "answer": 3,
+      "explain": "Strong passwords are long and mix upper and lower case, numbers and symbols."
+    },
+    {
+      "id": "c5-2fa",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "What is two-factor authentication?",
+      "options": [
+        "Using the same password twice",
+        "Typing a password two times",
+        "Requiring two different proofs of identity, such as a password and a code sent to a phone",
+        "Using two firewalls"
+      ],
+      "answer": 2,
+      "explain": "2FA adds an extra layer, so a stolen password alone is not enough."
+    },
+    {
+      "id": "c5-biometric",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "q": "Which is an example of biometric authentication?",
+      "options": [
+        "PIN",
+        "Fingerprint scan",
+        "Password",
+        "Security question"
+      ],
+      "answer": 1,
+      "explain": "Biometrics use a physical feature such as a fingerprint, face or iris."
+    },
+    {
+      "id": "c5-cloud",
+      "level": "hard",
+      "topic": "5 The internet and its uses",
+      "q": "Which is an advantage of using the cloud for software and storage?",
+      "options": [
+        "It works without any internet",
+        "The user is responsible for all backups",
+        "It is always more secure than local storage",
+        "Data and software can be accessed from any device with an internet connection"
+      ],
+      "answer": 3,
+      "explain": "The cloud allows access from anywhere and scalable storage, but depends on the internet and the provider's security."
+    },
+    {
+      "id": "c5-typed-url",
+      "level": "medium",
+      "topic": "5 The internet and its uses",
+      "type": "typed",
+      "q": "What does the abbreviation URL stand for? (three words)",
+      "accept": [
+        "uniform resource locator"
+      ],
+      "explain": "URL = Uniform Resource Locator, the address of a web page."
+    },
+    {
+      "id": "c6-automated",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
       "q": "In an automated system, which component converts a physical quantity such as temperature into data?",
-      "options": ["Actuator", "Sensor", "Microprocessor", "Speaker"], "answer": 1,
-      "explain": "Sensors input data from the environment. The microprocessor processes it and actuators make something happen." },
-    { "id": "c6-actuator", "level": "easy", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "Actuator",
+        "Sensor",
+        "Microprocessor",
+        "Speaker"
+      ],
+      "answer": 1,
+      "explain": "Sensors input data from the environment. The microprocessor processes it and actuators make something happen."
+    },
+    {
+      "id": "c6-actuator",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
       "q": "What is the job of an actuator?",
-      "options": ["To store the data", "To measure the surroundings", "To carry out a physical action such as opening a valve or turning a motor", "To connect to the internet"], "answer": 2,
-      "explain": "Actuators are the output devices of control systems. They convert signals from the microprocessor into movement." },
-    { "id": "c6-feedback", "level": "medium", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "To store the data",
+        "To measure the surroundings",
+        "To carry out a physical action such as opening a valve or turning a motor",
+        "To connect to the internet"
+      ],
+      "answer": 2,
+      "explain": "Actuators are the output devices of control systems. They convert signals from the microprocessor into movement."
+    },
+    {
+      "id": "c6-feedback",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
       "q": "A greenhouse heater switches on when the temperature drops below a set value and off when it reaches it. Which feature makes this automatic control possible?",
-      "options": ["Feedback from the sensor to the microprocessor", "Manual override", "Encryption", "Compression"], "answer": 0,
-      "explain": "The sensor's output (feedback) lets the microprocessor compare readings with the target and adjust the actuator." },
-    { "id": "c6-robot", "level": "easy", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "Feedback from the sensor to the microprocessor",
+        "Manual override",
+        "Encryption",
+        "Compression"
+      ],
+      "answer": 0,
+      "explain": "The sensor's output (feedback) lets the microprocessor compare readings with the target and adjust the actuator."
+    },
+    {
+      "id": "c6-robot",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
       "q": "Which of these is a typical characteristic of a robot?",
-      "options": ["It has no mechanical parts", "It cannot be programmed", "It is controlled by a computer program and has mechanical parts", "It only exists in factories"], "answer": 2,
-      "explain": "A robot has a mechanical structure, electrical components such as sensors and motors, and is programmable." },
-    { "id": "c6-ai", "level": "medium", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "It has no mechanical parts",
+        "It cannot be programmed",
+        "It is controlled by a computer program and has mechanical parts",
+        "It only exists in factories"
+      ],
+      "answer": 2,
+      "explain": "A robot has a mechanical structure, electrical components such as sensors and motors, and is programmable."
+    },
+    {
+      "id": "c6-ai",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
       "q": "What is Artificial Intelligence (AI)?",
-      "options": ["A computer that has been connected to the internet", "A computer that copies files faster", "A very large database", "A computer system that can perform tasks that normally need human intelligence, such as learning and decision making"], "answer": 3,
-      "explain": "AI systems use rules and data to reason, learn, and make decisions, for example speech recognition and image recognition." },
-    { "id": "c6-ml", "level": "medium", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "A computer that has been connected to the internet",
+        "A computer that copies files faster",
+        "A very large database",
+        "A computer system that can perform tasks that normally need human intelligence, such as learning and decision making"
+      ],
+      "answer": 3,
+      "explain": "AI systems use rules and data to reason, learn, and make decisions, for example speech recognition and image recognition."
+    },
+    {
+      "id": "c6-ml",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
       "q": "How does machine learning differ from a normal programmed system?",
-      "options": ["It cannot use data", "It improves its own performance from data without being explicitly reprogrammed for each case", "It only runs on robots", "It always gives the same output"], "answer": 1,
-      "explain": "Machine learning trains a model on data so it can adapt and improve its accuracy, rather than following only fixed hand-written rules." },
-    { "id": "c6-expert", "level": "hard", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "It cannot use data",
+        "It improves its own performance from data without being explicitly reprogrammed for each case",
+        "It only runs on robots",
+        "It always gives the same output"
+      ],
+      "answer": 1,
+      "explain": "Machine learning trains a model on data so it can adapt and improve its accuracy, rather than following only fixed hand-written rules."
+    },
+    {
+      "id": "c6-expert",
+      "level": "hard",
+      "topic": "6 Automated and emerging technologies",
       "q": "Which part of an expert system applies the rules in the rule base to the knowledge base to reach a conclusion?",
-      "options": ["User interface", "Inference engine", "Knowledge base", "Explanation system"], "answer": 1,
-      "explain": "Expert system parts: knowledge base (facts), rule base (IF-THEN rules), inference engine (reasoning), user interface and explanation system." },
-    { "id": "c6-driverless", "level": "medium", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "User interface",
+        "Inference engine",
+        "Knowledge base",
+        "Explanation system"
+      ],
+      "answer": 1,
+      "explain": "Expert system parts: knowledge base (facts), rule base (IF-THEN rules), inference engine (reasoning), user interface and explanation system."
+    },
+    {
+      "id": "c6-driverless",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
       "q": "Which is a possible advantage of driverless (autonomous) vehicles?",
-      "options": ["They never need sensors", "They remove all risk of accidents", "They use no electricity", "They can reduce accidents caused by human error"], "answer": 3,
-      "explain": "Autonomous vehicles use sensors and AI and do not get tired or distracted. Disadvantages include cost, hacking risk and ethical decisions in unavoidable accidents." },
-    { "id": "c6-vr", "level": "medium", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "They never need sensors",
+        "They remove all risk of accidents",
+        "They use no electricity",
+        "They can reduce accidents caused by human error"
+      ],
+      "answer": 3,
+      "explain": "Autonomous vehicles use sensors and AI and do not get tired or distracted. Disadvantages include cost, hacking risk and ethical decisions in unavoidable accidents."
+    },
+    {
+      "id": "c6-vr",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
       "q": "What is the difference between virtual reality (VR) and augmented reality (AR)?",
-      "options": ["VR places digital content over the real world, AR replaces it", "VR replaces the real world with a computer-generated one, AR overlays digital content on the real world", "They are the same", "AR needs a headset but VR does not"], "answer": 1,
-      "explain": "VR immerses the user in a simulated world, usually with a headset. AR adds digital objects to a live view of the real world, e.g. on a phone camera." },
-    { "id": "c6-impact", "level": "hard", "topic": "6 Automated and emerging technologies",
+      "options": [
+        "VR places digital content over the real world, AR replaces it",
+        "VR replaces the real world with a computer-generated one, AR overlays digital content on the real world",
+        "They are the same",
+        "AR needs a headset but VR does not"
+      ],
+      "answer": 1,
+      "explain": "VR immerses the user in a simulated world, usually with a headset. AR adds digital objects to a live view of the real world, e.g. on a phone camera."
+    },
+    {
+      "id": "c6-impact",
+      "level": "hard",
+      "topic": "6 Automated and emerging technologies",
       "q": "Which is a possible negative impact of using robots in manufacturing?",
-      "options": ["Higher consistency", "Faster production", "Loss of jobs for manual workers", "Robots can work 24 hours a day"], "answer": 2,
-      "explain": "Robots increase productivity and consistency but can replace human workers, leading to unemployment and a need for retraining." },
-    { "id": "c6-typed-sensor", "level": "easy", "topic": "6 Automated and emerging technologies", "type": "typed",
+      "options": [
+        "Higher consistency",
+        "Faster production",
+        "Loss of jobs for manual workers",
+        "Robots can work 24 hours a day"
+      ],
+      "answer": 2,
+      "explain": "Robots increase productivity and consistency but can replace human workers, leading to unemployment and a need for retraining."
+    },
+    {
+      "id": "c6-typed-sensor",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
+      "type": "typed",
       "q": "Name the input device in a control system that measures things like light, temperature or pressure. (one word)",
-      "accept": ["sensor", "sensors"],
-      "explain": "A sensor measures a physical property and sends the data to the microprocessor." }
+      "accept": [
+        "sensor",
+        "sensors"
+      ],
+      "explain": "A sensor measures a physical property and sends the data to the microprocessor."
+    },
+    {
+      "id": "c6-microprocessor",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
+      "q": "In an automated system, what does the microprocessor do?",
+      "options": [
+        "Processes the sensor data and decides what the actuator should do",
+        "Measures temperature",
+        "Moves a motor",
+        "Stores the data permanently"
+      ],
+      "answer": 0,
+      "explain": "The microprocessor compares sensor readings with stored values and sends signals to the actuators."
+    },
+    {
+      "id": "c6-adc",
+      "level": "hard",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Why is an analogue-to-digital converter (ADC) needed in a control system?",
+      "options": [
+        "To make the sensor larger",
+        "Sensors produce analogue signals and the microprocessor needs digital data",
+        "To move the actuator",
+        "To store the data"
+      ],
+      "answer": 1,
+      "explain": "Real-world measurements are analogue. The ADC converts them to digital so the microprocessor can process them."
+    },
+    {
+      "id": "c6-pir",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which sensor would a burglar alarm most likely use to detect movement?",
+      "options": [
+        "Humidity sensor",
+        "pH sensor",
+        "Infrared (motion) sensor",
+        "Acidity sensor"
+      ],
+      "answer": 2,
+      "explain": "Passive infrared (PIR) sensors detect movement from heat changes."
+    },
+    {
+      "id": "c6-robot-adv",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which is an advantage of robots in factories?",
+      "options": [
+        "They need breaks",
+        "They cost nothing",
+        "They make more mistakes",
+        "They can work continuously and repeat tasks accurately"
+      ],
+      "answer": 3,
+      "explain": "Robots give consistent quality, work 24/7 and can do dangerous tasks. They are costly to buy and maintain."
+    },
+    {
+      "id": "c6-drone",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which is a possible use of drones?",
+      "options": [
+        "Delivering parcels or surveying land",
+        "Storing data",
+        "Translating code",
+        "Replacing the internet"
+      ],
+      "answer": 0,
+      "explain": "Drones are used for delivery, photography, crop monitoring and search and rescue. Privacy and safety are concerns."
+    },
+    {
+      "id": "c6-ai-rules",
+      "level": "hard",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which statement about an AI system is correct?",
+      "options": [
+        "It is always correct",
+        "It cannot make mistakes",
+        "It cannot use data",
+        "The quality of its decisions depends on the data and rules it was given"
+      ],
+      "answer": 3,
+      "explain": "AI can be biased or wrong if the training data or rules are poor."
+    },
+    {
+      "id": "c6-expert-use",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which of these is a use of an expert system?",
+      "options": [
+        "Making a medical diagnosis",
+        "Editing photos",
+        "Sending emails",
+        "Compressing files"
+      ],
+      "answer": 0,
+      "explain": "Expert systems also support mineral prospecting, car engine fault diagnosis and tax advice."
+    },
+    {
+      "id": "c6-expert-parts",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
+      "q": "In an expert system, what is stored in the knowledge base?",
+      "options": [
+        "The user's passwords",
+        "The IF-THEN rules only",
+        "A collection of facts and information about the subject",
+        "The operating system"
+      ],
+      "answer": 2,
+      "explain": "The knowledge base holds the facts. The rule base holds the IF-THEN rules."
+    },
+    {
+      "id": "c6-ar-use",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which is an example of using augmented reality?",
+      "options": [
+        "Using a phone camera to see furniture placed in your room",
+        "Talking on the phone",
+        "Sending a text message",
+        "Browsing a website without images"
+      ],
+      "answer": 0,
+      "explain": "AR overlays virtual objects onto the real-world view."
+    },
+    {
+      "id": "c6-ethics",
+      "level": "medium",
+      "topic": "6 Automated and emerging technologies",
+      "q": "Which is an ethical concern about using AI to make decisions?",
+      "options": [
+        "It uses electricity",
+        "It is invented",
+        "Biased data may lead to unfair decisions",
+        "It uses binary"
+      ],
+      "answer": 2,
+      "explain": "If the training data is biased, the AI's decisions can discriminate. Accountability for the decision is also unclear."
+    },
+    {
+      "id": "c6-3dprint",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
+      "q": "What does a 3D printer do?",
+      "options": [
+        "Prints on flat paper",
+        "Builds a solid object layer by layer from a digital design",
+        "Scans documents",
+        "Makes the screen show 3D images"
+      ],
+      "answer": 1,
+      "explain": "Additive manufacturing builds objects layer by layer from a 3D model."
+    },
+    {
+      "id": "c6-typed-ai",
+      "level": "easy",
+      "topic": "6 Automated and emerging technologies",
+      "type": "typed",
+      "q": "What do the letters AI stand for? (two words)",
+      "accept": [
+        "artificial intelligence"
+      ],
+      "explain": "AI = Artificial Intelligence."
+    }
   ]
 }

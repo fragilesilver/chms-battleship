@@ -139,7 +139,7 @@ Rewards: easy = 1 shot, medium = 2, hard = 3.
 This copy of the game can switch subject and exam without code changes. When a teacher creates a game, the **Question set** box offers:
 
 - **Built-in sets**: `Bahasa Melayu PSR` (`data/bm-psr.json`), `Computer Science 2210 Revision (Ch 1-6)` (`data/cs-2210-revision.json`) and the original `Cambridge pseudocode` bank.
-  - `Computer Science 2210 Revision (Ch 1-6)` has 72 questions across: 1 Data representation, 2 Data transmission, 3 Hardware, 4 Software, 5 The internet and its uses, 6 Automated and emerging technologies. It includes typed questions for torpedoes, and has the pseudocode puzzles and console turned off.
+  - `Computer Science 2210 Revision (Ch 1-6)` has 151 questions across: 1 Data representation, 2 Data transmission, 3 Hardware, 4 Software, 5 The internet and its uses, 6 Automated and emerging technologies. It includes typed questions for torpedoes, and has the pseudocode puzzles and console turned off.
 - **Upload**: a JSON or CSV file. It is checked on upload (errors are listed) and saved with the game.
 
 A set can turn features on or off. Sets without `generated` and `console` (like BM PSR and the 2210 revision set) hide the pseudocode puzzles and code console. Torpedoes then use the set's **typed** questions.
