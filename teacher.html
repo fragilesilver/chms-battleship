@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teacher | CHMS Battleship Royale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="teacher">
+  <header class="topbar">
+    <h1 class="brand">Battleship Royale <small>Teacher dashboard</small></h1>
+    <div class="who" id="who"></div>
+  </header>
+
+  <main id="app">
+    <!-- Create or reopen -->
+    <section id="screen-setup" class="screen setup">
+      <h2>New game</h2>
+      <form id="setup-form" autocomplete="off">
+        <label>Number of teams
+          <select id="team-count">
+            <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+          </select>
+        </label>
+        <fieldset>
+          <legend>Team names</legend>
+          <div id="team-names"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Crew sizes</legend>
+          <label class="check"><input type="checkbox" id="even-teams" checked> Keep crews even: a crew can't get more than one student ahead of the others</label>
+          <label>Most students per crew (0 = no limit)
+            <input id="crew-max" type="number" min="0" max="40" value="0">
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Crew roles</legend>
+          <label class="check"><input type="checkbox" id="roles-on"> Give every crew roles. A random captain places the fleet and hands out jobs: gunner (fires), navigator (earns sonar), scientist (earns airstrikes) and crew (earn shots)</label>
+          <div class="two-col" id="role-times">
+            <label>Navigator earns a sonar at most every (seconds)
+              <input id="nav-secs" type="number" min="5" max="600" value="15">
+            </label>
+            <label>Scientist earns an airstrike at most every (seconds)
+              <input id="sci-secs" type="number" min="10" max="900" value="90">
+            </label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Map and fleet</legend>
+          <label>Each team's home waters
+            <select id="zone-size"></select>
+          </label>
+          <p class="hint" id="ocean-size"></p>
+          <div class="fleet-table" id="fleet-table"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Question set</legend>
+          <label>Subject and exam
+            <select id="qset-pick"></select>
+          </label>
+          <div class="qset-box">
+            <label>Or upload your own (JSON or CSV)
+              <input type="file" id="qset-file" accept=".json,.csv,.txt,application/json,text/csv">
+            </label>
+            <label>Game language for an uploaded set
+              <select id="qset-lang"><option value="en">English</option><option value="ms">Bahasa Melayu</option></select>
+            </label>
+            <button class="linkish" type="button" id="qset-clear" hidden>Remove uploaded file and use the list above</button>
+            <ul class="qset-errors" id="qset-errors" role="alert" hidden></ul>
+            <p class="hint qset-info" id="qset-info" role="status"></p>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Ways to earn and fire shots</legend>
+          <label class="check"><input type="checkbox" id="mode-quiz" checked> <span id="mode-quiz-text">Earn shots by answering questions</span></label>
+          <label class="check" id="row-torpedo"><input type="checkbox" id="mode-torpedo" checked> <span id="mode-torpedo-text">Torpedoes</span></label>
+          <label class="check" id="row-console"><input type="checkbox" id="mode-console" checked> <span id="mode-console-text">Code console</span></label>
+        </fieldset>
+        <div class="two-col">
+          <label>Starting shots
+            <input id="start-ammo" type="number" min="0" max="8" value="3">
+          </label>
+          <label>Free shot every (seconds, 0 = off)
+            <input id="reload-secs" type="number" min="0" max="600" value="90">
+          </label>
+          <label>Torpedo reload (seconds)
+            <input id="torpedo-secs" type="number" min="5" max="300" value="30">
+          </label>
+          <label>Storm closes in every (minutes, 0 = only when you click)
+            <input id="storm-mins" type="number" min="0" max="30" value="3">
+          </label>
+        </div>
+        <button class="btn primary" type="submit">Create game</button>
+      </form>
+
+      <form id="reopen-form" class="reopen" autocomplete="off">
+        <h3>Reopen a game</h3>
+        <div class="inline">
+          <input id="reopen-code" maxlength="4" placeholder="Code" aria-label="Game code" autocapitalize="characters">
+          <button class="btn" type="submit">Open</button>
+        </div>
+        <p class="msg" id="setup-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- Control room -->
+    <section id="screen-control" class="screen control" hidden>
+      <div class="join-banner">
+        <div>
+          <span class="jb-label">Join at</span>
+          <span class="jb-url" id="join-url"></span>
+        </div>
+        <div>
+          <span class="jb-label">Code</span>
+          <span class="jb-code" id="join-code"></span>
+        </div>
+        <a class="btn" id="projector-link" target="_blank" rel="noopener">Open projector view</a>
+      </div>
+
+      <ol class="phases" id="phases">
+        <li data-p="lobby">Crews join</li>
+        <li data-p="placement">Fleet placement</li>
+        <li data-p="battle">Battle</li>
+        <li data-p="finished">Finished</li>
+      </ol>
+
+      <div class="control-grid">
+        <div>
+          <div class="controls" id="controls"></div>
+          <p class="warn">This view shows every ship. Don't put it on the projector.</p>
+          <div class="chart-wrap"><div id="ocean"></div></div>
+        </div>
+        <aside class="panel">
+          <h3>Teams</h3>
+          <ul class="teams" id="teams"></ul>
+          <h3>Crew list</h3>
+          <p class="hint">Numbers show questions right out of questions answered.</p>
+          <div id="crews" class="crews"></div>
+          <h3>Battle log</h3>
+          <ol class="feed" id="feed"></ol>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/teacher.js"></script>
+</body>
+</html>

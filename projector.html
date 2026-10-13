@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projector | CHMS Battleship Royale</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="projector">
+  <header class="topbar">
+    <h1 class="brand">Battleship Royale <small>CHMS BSB</small></h1>
+    <div class="top-right">
+      <div class="proj-join" id="proj-join"></div>
+      <button class="btn mute" id="mute" type="button"></button>
+    </div>
+  </header>
+
+  <main id="app">
+    <section id="screen-code" class="screen join" hidden>
+      <h2>Show a game</h2>
+      <form id="code-form" autocomplete="off">
+        <label>Game code
+          <input id="code-input" maxlength="4" required placeholder="K7QX" autocapitalize="characters">
+        </label>
+        <button class="btn primary" type="submit">Show on screen</button>
+        <p class="msg" id="code-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="screen-lobby" class="screen proj-lobby" hidden>
+      <div class="lobby-join">
+        <p class="lj-step">Open this on your phone or laptop</p>
+        <p class="lj-url" id="lj-url"></p>
+        <p class="lj-step">and enter the code</p>
+        <p class="lj-code" id="lj-code"></p>
+        <div class="qr" id="qr" aria-hidden="true"></div>
+      </div>
+      <div class="lobby-teams">
+        <h2 id="lobby-status"></h2>
+        <div id="lobby-teams"></div>
+      </div>
+    </section>
+
+    <section id="screen-battle" class="screen proj-battle" hidden>
+      <div class="chart-wrap"><div id="ocean"></div></div>
+      <aside class="proj-side">
+        <div class="proj-storm" id="proj-storm"></div>
+        <ul class="teams big" id="teams"></ul>
+        <ol class="feed big" id="feed"></ol>
+      </aside>
+      <div class="winner-banner" id="winner" hidden></div>
+    </section>
+  </main>
+
+  <p class="sound-hint" id="sound-hint">Click anywhere to turn on sound</p>
+  <script type="module" src="js/projector.js"></script>
+</body>
+</html>
